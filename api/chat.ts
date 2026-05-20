@@ -64,7 +64,7 @@ export default async function handler(req: any, res: any) {
 
     const payload = {
       contents: validatedContents,
-      systemInstruction: {
+      system_instruction: {
         parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian. Answer concisely." }]
       }
     };
