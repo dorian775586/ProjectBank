@@ -16,6 +16,20 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ text: "СЕРВЕР ОБНОВЛЕН, ВИЖУ ТЕБЯ" });
     }
 
+    // --- 1a. ДИАГНОСТИКА МОДЕЛЕЙ (КВЕРИ) ---
+    if (message && message.toString().toUpperCase().trim() === "КВЕРИ") {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return res.status(200).json({ text: "Ошибка: Ключ не задан." });
+      
+      const modelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+      const mResp = await fetch(modelsUrl);
+      const mData = await mResp.json();
+      return res.status(200).json({ 
+        text: `Доступные модели: ${JSON.stringify(mData, null, 2)}`,
+        debugUrl: modelsUrl.replace(apiKey, "HIDDEN")
+      });
+    }
+
     // --- 2. API КЛЮЧ ---
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -74,19 +88,22 @@ export default async function handler(req: any, res: any) {
     };
 
     // --- 5. ВЫЗОВ GOOGLE API ---
-    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const googleResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: cleanHeaders,
       body: JSON.stringify(payload)
     });
 
-    console.log("STATUS FROM GOOGLE:", googleResponse.status);
+    console.log("STATUS FROM GOOGLE:", googleResponse.status, "URL:", targetUrl.split('?')[0]);
 
     if (!googleResponse.ok) {
       const errorData = await googleResponse.text();
       console.error("GOOGLE ERROR BODY:", errorData);
       return res.status(200).json({ 
-        text: `Ошибка Google API (Код: ${googleResponse.status}): ${errorData}`, 
+        text: `Ошибка Google API (Код: ${googleResponse.status}): ${errorData}`,
+        debugUrl: targetUrl.split('?')[0],
         isError: true 
       });
     }
