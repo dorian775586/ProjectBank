@@ -16,15 +16,18 @@ import {
   ArrowUpRight, 
   CheckCircle2,
   AlertCircle,
-  X
+  X,
+  MessageSquare,
+  Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations, Language } from './translations';
 import { supabase } from './lib/supabase';
+import { AIChat } from './components/AIChat';
 
 // --- Constants & Types ---
 
-type Tab = 'dashboard' | 'roadmap' | 'info' | 'profile';
+type Tab = 'dashboard' | 'roadmap' | 'info' | 'profile' | 'ai';
 
 interface RoadmapPhase {
   id: number;
@@ -34,7 +37,14 @@ interface RoadmapPhase {
   items: string[];
 }
 
-const RoadmapItem = ({ phase, isFirst, isLast, t }: { phase: RoadmapPhase, isFirst: boolean, isLast: boolean, t: any }) => {
+interface RoadmapItemProps {
+  phase: RoadmapPhase;
+  isFirst: boolean;
+  isLast: boolean;
+  t: any;
+}
+
+const RoadmapItem: React.FC<RoadmapItemProps> = ({ phase, isFirst, isLast, t }) => {
   const [isExpanded, setIsExpanded] = useState(phase.status === 'Active');
   const isActive = phase.status === 'Active';
 
@@ -114,7 +124,14 @@ interface Lender {
 
 // --- Sub-components ---
 
-const NavItem = ({ icon: Icon, label, isActive, onClick }: { icon: any, label: string, isActive: boolean, onClick: () => void }) => (
+interface NavItemProps {
+  icon: any;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick }) => (
   <button 
     onClick={onClick}
     className={`flex flex-col items-center justify-center space-y-1 transition-all flex-1 py-2 ${isActive ? 'text-emerald-green' : 'text-white/40'}`}
@@ -130,7 +147,14 @@ const NavItem = ({ icon: Icon, label, isActive, onClick }: { icon: any, label: s
   </button>
 );
 
-const PurchaseModal = ({ isOpen, onClose, onBuy, t }: { isOpen: boolean, onClose: () => void, onBuy: () => void, t: any }) => {
+interface PurchaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onBuy: () => void;
+  t: any;
+}
+
+const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, onBuy, t }) => {
   const [amount, setAmount] = useState(100000);
   const cost = amount * 0.01;
 
@@ -200,7 +224,13 @@ const PurchaseModal = ({ isOpen, onClose, onBuy, t }: { isOpen: boolean, onClose
   );
 };
 
-const SystemTestModal = ({ lender, onClose, t }: { lender: Lender | null, onClose: () => void, t: any }) => {
+interface SystemTestModalProps {
+  lender: Lender | null;
+  onClose: () => void;
+  t: any;
+}
+
+const SystemTestModal: React.FC<SystemTestModalProps> = ({ lender, onClose, t }) => {
   if (!lender) return null;
 
   return (
@@ -333,7 +363,7 @@ export default function App() {
               updated_at: new Date().toISOString()
             });
           
-          alert(`Supabase Status: Data Loaded. Balance: ${profile.coins} $BANK`);
+          console.log(`Supabase Status: Data Loaded. Balance: ${profile.coins} $BANK`);
         } else {
           // User does NOT exist: Create new profile with 0 coins
           const { error: createError } = await supabase
@@ -347,10 +377,10 @@ export default function App() {
 
           if (createError) throw createError;
           setBalance(0);
-          alert(`Supabase Status: New profile created for ${user.first_name}.`);
+          console.log(`Supabase Status: New profile created for ${user.first_name}.`);
         }
       } catch (err: any) {
-        alert(`Supabase Sync Error: ${err.message}\nTable: profiles`);
+        console.error(`Supabase Sync Error: ${err.message}`);
       }
     };
 
@@ -388,8 +418,6 @@ export default function App() {
         
         // Trigger sync
         syncUserWithSupabase(tgUser);
-      } else {
-        alert("Debug: No Telegram User Data found. Check if running inside Telegram.");
       }
 
       return () => clearTimeout(expandTimer);
@@ -510,6 +538,18 @@ export default function App() {
                   ))}
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'ai' && (
+            <motion.div 
+              key="ai"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="h-full"
+            >
+              <AIChat t={t} />
             </motion.div>
           )}
 
@@ -672,6 +712,7 @@ export default function App() {
 
       <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-6 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
         <NavItem icon={TrendingUp} label={t('lend_tab')} isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+        <NavItem icon={Bot} label={t('ai_tab')} isActive={activeTab === 'ai'} onClick={() => setActiveTab('ai')} />
         <NavItem icon={Zap} label={t('roadmap_tab')} isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
         <NavItem icon={Info} label={t('protocol_tab')} isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
         <NavItem icon={User} label={t('profile_tab')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
