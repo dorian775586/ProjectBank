@@ -161,30 +161,6 @@ const LENDERS: Lender[] = [
 
 // --- Sub-components ---
 
-const Header = ({ balance, onPlusClick }: { balance: number, onPlusClick: () => void }) => (
-  <header id="app-header" className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 py-3 flex justify-between items-center">
-    <div className="flex items-center space-x-3">
-      <div className="w-10 h-10 rounded-full bg-emerald-green/20 border border-emerald-green/30 flex items-center justify-center">
-        <User className="text-emerald-green w-5 h-5" />
-      </div>
-      <div>
-        <h2 className="text-sm font-bold text-white leading-none">Alex</h2>
-        <span className="text-[10px] text-white/40 font-mono tracking-wider">#77412</span>
-      </div>
-    </div>
-    
-    <div className="flex items-center bg-[#111] rounded-full pl-3 pr-1 py-1 border border-white/5 shadow-inner">
-      <span className="text-xs font-bold text-gold mr-2">{balance.toLocaleString()} $BANK</span>
-      <button 
-        onClick={onPlusClick}
-        className="w-7 h-7 bg-gold rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-[0_0_15px_rgba(255,204,0,0.3)] hover:shadow-[0_0_20px_rgba(255,204,0,0.5)]"
-      >
-        <Plus className="text-black w-4 h-4 stroke-[3]" />
-      </button>
-    </div>
-  </header>
-);
-
 const NavItem = ({ icon: Icon, label, isActive, onClick }: { icon: any, label: string, isActive: boolean, onClick: () => void }) => (
   <button 
     onClick={onClick}
@@ -314,6 +290,7 @@ export default function App() {
   const [balance, setBalance] = useState(0);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [selectedLender, setSelectedLender] = useState<Lender | null>(null);
+  const [userData, setUserData] = useState({ name: 'User', id: '00000' });
 
   useEffect(() => {
     // Initialize Telegram Web App
@@ -322,9 +299,17 @@ export default function App() {
       tg.ready();
       tg.expand();
       
-      // Set theme colors to match our app
+      // Set theme colors
       tg.setHeaderColor('#000000');
       tg.setBackgroundColor('#000000');
+
+      // Get real user data
+      if (tg.initDataUnsafe?.user) {
+        setUserData({
+          name: tg.initDataUnsafe.user.first_name || 'User',
+          id: tg.initDataUnsafe.user.id.toString() || '00000'
+        });
+      }
     }
   }, []);
 
@@ -334,7 +319,27 @@ export default function App() {
 
   return (
     <div id="app-container" className="flex flex-col min-h-screen bg-black font-sans selection:bg-emerald-green selection:text-black pb-24">
-      <Header balance={balance} onPlusClick={() => setIsPurchaseOpen(true)} />
+      <header id="app-header" className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 py-3 flex justify-between items-center">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-green/20 border border-emerald-green/30 flex items-center justify-center">
+            <User className="text-emerald-green w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-white leading-none">{userData.name}</h2>
+            <span className="text-[10px] text-white/40 font-mono tracking-wider">#{userData.id}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center bg-[#111] rounded-full pl-3 pr-1 py-1 border border-white/5 shadow-inner">
+          <span className="text-xs font-bold text-gold mr-2">{balance.toLocaleString()} $BANK</span>
+          <button 
+            onClick={() => setIsPurchaseOpen(true)}
+            className="w-7 h-7 bg-gold rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-[0_0_15px_rgba(255,204,0,0.3)] hover:shadow-[0_0_20px_rgba(255,204,0,0.5)]"
+          >
+            <Plus className="text-black w-4 h-4 stroke-[3]" />
+          </button>
+        </div>
+      </header>
 
       <main className="flex-1 max-w-md mx-auto w-full">
         <AnimatePresence mode="wait">
