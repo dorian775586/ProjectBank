@@ -69,7 +69,7 @@ export default async function handler(req: any, res: any) {
 
     // Если после удаления всё еще не user (или пусто), и мы хотим добавить текущий user месседж:
     // Мы просто добавляем текущее сообщение. Gemini ожидает [user, model, user, model, ..., user]
-    const finalPrompt = "Инструкция: Ты ИИ-ассистент ProjectBank. Отвечай кратко на русском. Вопрос пользователя: " + (message || "");
+    const finalPrompt = "Ты ИИ-ассистент ProjectBank. Отвечай кратко на русском. Вопрос: " + (message || "");
 
     validatedContents.push({
       role: "user",
@@ -88,7 +88,7 @@ export default async function handler(req: any, res: any) {
     };
 
     // --- 5. ВЫЗОВ GOOGLE API ---
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
     
     const googleResponse = await fetch(targetUrl, {
       method: 'POST',
