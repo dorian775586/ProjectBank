@@ -27,6 +27,10 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log('Gemini Key exists in client:', !!(import.meta as any).env.VITE_GEMINI_API_KEY);
+  }, []);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -70,12 +74,12 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
       };
 
       setMessages(prev => [...prev, modelMsg]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: "Sorry, I encountered an error. Please try again later.",
+        text: `Error: ${error.message || 'Failed to connect to AI server'}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
