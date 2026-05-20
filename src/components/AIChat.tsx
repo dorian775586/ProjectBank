@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
 
 interface Message {
   id: string;
@@ -26,9 +27,16 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Security Note: Client-side API calls expose your API key. 
+  // This was implemented per explicit user request for a client-side only architecture.
+  const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+
   useEffect(() => {
-    console.log('Gemini Key exists in client:', !!(import.meta as any).env.VITE_GEMINI_API_KEY);
-  }, []);
+    console.log('Gemini Key exists in client:', !!apiKey);
+    if (!apiKey) {
+      console.error('VITE_GEMINI_API_KEY is missing in environment variables.');
+    }
+  }, [apiKey]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -38,6 +46,17 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    if (!apiKey) {
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: 'API Key missing in build. Please check your Vercel environment variables.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+      return;
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -51,35 +70,37 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
     setIsLoading(true);
 
     try {
-      const history = messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-      }));
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history }),
+      const genAI = new GoogleGenAI({ 
+        apiKey
+      });
+      
+      const chat = genAI.chats.create({
+        model: "gemini-3.5-flash",
+        config: {
+          systemInstruction: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian.",
+        },
+        history: messages.map(m => ({
+          role: m.role,
+          parts: [{ text: m.text }]
+        }))
       });
 
-      if (!response.ok) throw new Error('Failed to fetch from AI');
-      
-      const data = await response.json();
+      const response = await chat.sendMessage({ message: input });
       
       const modelMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: data.text,
+        text: response.text || '',
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, modelMsg]);
     } catch (error: any) {
-      console.error(error);
+      console.error('Gemini Client Error:', error);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: `Error: ${error.message || 'Failed to connect to AI server'}`,
+        text: `Error: ${error.message || 'Failed to connect to Gemini API'}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
