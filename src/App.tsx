@@ -315,6 +315,19 @@ export default function App() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [selectedLender, setSelectedLender] = useState<Lender | null>(null);
 
+  useEffect(() => {
+    // Initialize Telegram Web App
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      
+      // Set theme colors to match our app
+      tg.setHeaderColor('#000000');
+      tg.setBackgroundColor('#000000');
+    }
+  }, []);
+
   const handleBuy = () => {
     alert("Please connect your TonKeeper or Trust Wallet to complete payment.");
   };
