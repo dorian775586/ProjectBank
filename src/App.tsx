@@ -18,16 +18,19 @@ import {
   AlertCircle,
   X,
   MessageSquare,
-  Bot
+  Bot,
+  Terminal,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations, Language } from './translations';
 import { supabase } from './lib/supabase';
 import { AIChat } from './components/AIChat';
+import { QuestTab } from './components/QuestTab';
 
 // --- Constants & Types ---
 
-type Tab = 'dashboard' | 'roadmap' | 'info' | 'profile' | 'ai';
+type Tab = 'dashboard' | 'roadmap' | 'info' | 'profile' | 'ai' | 'quest';
 
 interface RoadmapPhase {
   id: number;
@@ -553,6 +556,18 @@ export default function App() {
             </motion.div>
           )}
 
+          {activeTab === 'quest' && (
+            <motion.div 
+              key="quest"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="h-full"
+            >
+              <QuestTab userId={userData.id} t={t} />
+            </motion.div>
+          )}
+
           {activeTab === 'roadmap' && (
             <motion.div 
               key="roadmap"
@@ -710,11 +725,11 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-6 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
+      <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
         <NavItem icon={TrendingUp} label={t('lend_tab')} isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
         <NavItem icon={Bot} label={t('ai_tab')} isActive={activeTab === 'ai'} onClick={() => setActiveTab('ai')} />
+        <NavItem icon={Terminal} label={t('quest_tab')} isActive={activeTab === 'quest'} onClick={() => setActiveTab('quest')} />
         <NavItem icon={Zap} label={t('roadmap_tab')} isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
-        <NavItem icon={Info} label={t('protocol_tab')} isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
         <NavItem icon={User} label={t('profile_tab')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </nav>
 
