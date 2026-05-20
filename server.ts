@@ -52,13 +52,15 @@ async function startServer() {
 
       console.log("Отправляю в ИИ (Direct Fetch):", JSON.stringify({ contents: validatedContents }, null, 2));
 
-      // Direct FETCH to Google API to ensure NO client headers are passed
+      // 1. ABSOLUTE ANONYMIZATION: Create clean headers manually
+      const cleanHeaders = {
+        'Content-Type': 'application/json'
+      };
+
+      // 2. Direct FETCH to Google API using URL API Key
       const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // NO EXTRA HEADERS (like X-Forwarded-For) passed here
-        },
+        headers: cleanHeaders,
         body: JSON.stringify({
           contents: validatedContents,
           systemInstruction: {
@@ -67,13 +69,13 @@ async function startServer() {
         })
       });
 
-      console.log("Response Status from Google:", googleResponse.status);
+      console.log("STATUS FROM GOOGLE:", googleResponse.status);
 
       if (!googleResponse.ok) {
-        const errorText = await googleResponse.text();
-        console.error(`Google API Error (${googleResponse.status}):`, errorText);
+        const errorData = await googleResponse.text();
+        console.error("GOOGLE ERROR BODY:", errorData);
         return res.json({ 
-          text: "Банкир занят. Попробуйте позже.", 
+          text: `Банкир временно недоступен (Код: ${googleResponse.status}).`, 
           isError: true,
           debugStatus: googleResponse.status 
         });
