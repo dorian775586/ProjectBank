@@ -10,8 +10,9 @@ async function startServer() {
   app.use(express.json());
 
   // Gemini Client Initialization
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const genAI = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
+    apiKey: apiKey || '',
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
@@ -24,9 +25,8 @@ async function startServer() {
     try {
       const { message, history } = req.body;
       
-      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is missing on server side");
+        return res.status(500).json({ error: "GEMINI_API_KEY is missing on server side" });
       }
 
       const chat = genAI.chats.create({
