@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 async function startServer() {
   const app = express();
@@ -11,14 +11,7 @@ async function startServer() {
 
   // Gemini Client Initialization
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-  const genAI = new GoogleGenAI({
-    apiKey: apiKey || '',
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
-  });
+  const genAI = new GoogleGenerativeAI(apiKey || '');
 
   // API routes
   app.post("/api/chat", async (req, res) => {
@@ -29,16 +22,21 @@ async function startServer() {
         return res.status(500).json({ error: "GEMINI_API_KEY is missing on server side" });
       }
 
-      const chat = genAI.chats.create({
-        model: "gemini-1.5-flash",
-        config: {
-          systemInstruction: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian.",
-        },
-        history: history || []
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash-latest",
+        systemInstruction: {
+          role: "system",
+          parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian." }]
+        }
       });
 
-      const result = await chat.sendMessage({ message });
-      res.json({ text: result.text });
+      const chat = model.startChat({
+        history: history || [],
+      });
+
+      const result = await chat.sendMessage(message);
+      const responseText = result.response.text();
+      res.json({ text: responseText });
     } catch (error: any) {
       console.error("Gemini Error:", error);
       res.status(500).json({ error: error.message || "Failed to get response from AI" });

@@ -276,7 +276,7 @@ export default function App() {
   const [balance, setBalance] = useState(0);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [selectedLender, setSelectedLender] = useState<Lender | null>(null);
-  const [userData, setUserData] = useState({ name: 'User', id: '00000' });
+  const [userData, setUserData] = useState({ name: 'User', id: '00000', isAdmin: false });
   const [lang, setLang] = useState<Language>('en');
 
   const t = (key: keyof typeof translations['en']) => translations[lang][key] || translations['en'][key];
@@ -414,9 +414,11 @@ export default function App() {
       // Detect user data & Sync
       if (tg.initDataUnsafe?.user) {
         const tgUser = tg.initDataUnsafe.user;
+        const tgId = tgUser.id.toString();
         setUserData({
           name: tgUser.first_name || 'User',
-          id: tgUser.id.toString() || '00000'
+          id: tgId || '00000',
+          isAdmin: tgId === '623203896'
         });
         
         // Trigger sync
@@ -564,7 +566,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="h-full"
             >
-              <QuestTab userId={userData.id} t={t} />
+              <QuestTab userId={userData.id} t={t} isAdmin={userData.isAdmin} />
             </motion.div>
           )}
 

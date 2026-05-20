@@ -13,27 +13,31 @@ interface Question {
 interface QuestTabProps {
   userId: string;
   t: (key: any) => string;
+  isAdmin: boolean;
 }
 
-export const QuestTab: React.FC<QuestTabProps> = ({ userId, t }) => {
+export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<number | null>(null);
   const [answer, setAnswer] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchData();
+    if (userId) {
+      fetchData();
+    }
   }, [userId]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching quest data for user:', userId);
       
-      // 1. Get user progress
+      // 1. Get user progress (with retry/init logic)
       const { data: progress, error: pError } = await supabase
         .from('user_quests')
         .select('current_step')
@@ -41,10 +45,19 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t }) => {
         .maybeSingle();
       
       if (pError) throw pError;
-      if (progress) setCurrentStep(progress.current_step);
-      else {
-        // Init progress if not exists
-        await supabase.from('user_quests').insert({ user_id: userId, current_step: 1 });
+      
+      if (progress) {
+        console.log('Loaded progress:', progress.current_step);
+        setCurrentStep(progress.current_step);
+      } else {
+        console.log('No progress found, initializing...');
+        const { error: iError } = await supabase
+          .from('user_quests')
+          .insert({ user_id: userId, current_step: 1 })
+          .select()
+          .single();
+        if (iError && iError.code !== '23505') throw iError; // 23505 is unique violation (already exists)
+        setCurrentStep(1);
       }
 
       // 2. Get all questions (ordered)
@@ -69,6 +82,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t }) => {
     setErrorMsg(null);
     
     try {
+      console.log('Verifying answer for question:', questionId);
       // Secure verification via RPC
       const { data: isCorrect, error: rpcError } = await supabase.rpc('check_quest_answer', {
         q_id: questionId,
@@ -78,6 +92,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t }) => {
       if (rpcError) throw rpcError;
 
       if (isCorrect) {
+        console.log('Correct answer! Updating progression...');
         // Update Supabase Progress
         const nextStep = currentStep + 1;
         const { error: upError } = await supabase
@@ -138,8 +153,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t }) => {
           const question = questions.find(q => q.id === stepNum);
           const isSolved = stepNum < currentStep;
           const isActiveStep = stepNum === currentStep;
-          const isHardLocked = question ? !question.is_active : true;
-          const isSoftLocked = stepNum > currentStep && !isHardLocked;
+          const isHardLocked = question ? (!question.is_active && !isAdmin) : true;
+          const isSoftLocked = stepNum > currentStep && !isHardLocked && !isAdmin;
 
           return (
             <div key={`step-${stepNum}`} className="relative pl-10">
