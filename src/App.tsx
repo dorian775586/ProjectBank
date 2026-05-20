@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations, Language } from './translations';
+import { supabase } from './lib/supabase';
 
 // --- Constants & Types ---
 
@@ -129,7 +130,7 @@ const NavItem = ({ icon: Icon, label, isActive, onClick }: { icon: any, label: s
   </button>
 );
 
-const PurchaseModal = ({ isOpen, onClose, onBuy }: { isOpen: boolean, onClose: () => void, onBuy: () => void }) => {
+const PurchaseModal = ({ isOpen, onClose, onBuy, t }: { isOpen: boolean, onClose: () => void, onBuy: () => void, t: any }) => {
   const [amount, setAmount] = useState(100000);
   const cost = amount * 0.01;
 
@@ -199,7 +200,7 @@ const PurchaseModal = ({ isOpen, onClose, onBuy }: { isOpen: boolean, onClose: (
   );
 };
 
-const SystemTestModal = ({ lender, onClose }: { lender: Lender | null, onClose: () => void }) => {
+const SystemTestModal = ({ lender, onClose, t }: { lender: Lender | null, onClose: () => void, t: any }) => {
   if (!lender) return null;
 
   return (
@@ -307,6 +308,31 @@ export default function App() {
   useEffect(() => {
     // Initialize Telegram Web App
     const tg = (window as any).Telegram?.WebApp;
+
+    const syncUserWithSupabase = async (user: any) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .upsert({ 
+            id: user.id.toString(), 
+            name: user.first_name || 'User',
+            coins: 0, // Initial balance
+            updated_at: new Date().toISOString()
+          })
+          .select();
+
+        if (error) {
+          alert(`Supabase Sync Error: ${error.message}\nTable: profiles\nCode: ${error.code}`);
+        } else {
+          console.log('Supabase Sync Success:', data);
+          // Show success alert only on first load as requested
+          alert(`Supabase Status: Connected as ${user.first_name}. Success code: 200`);
+        }
+      } catch (err: any) {
+        alert(`Supabase Exception: ${err.message}`);
+      }
+    };
+
     if (tg) {
       // 1. Core ready signal
       tg.ready();
@@ -331,12 +357,18 @@ export default function App() {
         setLang('ru');
       }
 
-      // Detect user data
+      // Detect user data & Sync
       if (tg.initDataUnsafe?.user) {
+        const tgUser = tg.initDataUnsafe.user;
         setUserData({
-          name: tg.initDataUnsafe.user.first_name || 'User',
-          id: tg.initDataUnsafe.user.id.toString() || '00000'
+          name: tgUser.first_name || 'User',
+          id: tgUser.id.toString() || '00000'
         });
+        
+        // Trigger sync
+        syncUserWithSupabase(tgUser);
+      } else {
+        alert("Debug: No Telegram User Data found. Check if running inside Telegram.");
       }
 
       return () => clearTimeout(expandTimer);
@@ -358,7 +390,11 @@ export default function App() {
   };
 
   return (
-    <div id="app-container" className="flex flex-col min-h-screen bg-black font-sans selection:bg-emerald-green selection:text-black pb-24">
+    <div 
+      id="app-container" 
+      className="flex flex-col min-h-screen bg-black font-sans selection:bg-emerald-green selection:text-black pb-24"
+      style={{ paddingTop: 'var(--tg-viewport-stable-height-offset, 30px)' }}
+    >
       <header id="app-header" className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-emerald-green/20 border border-emerald-green/30 flex items-center justify-center">
@@ -472,12 +508,12 @@ export default function App() {
               </div>
 
               <div className="relative">
-                {ROADMAP.map((phase, idx) => (
+                {ROADMAP.map((phase) => (
                   <RoadmapItem 
                     key={`roadmap-phase-${phase.id}`} 
                     phase={phase} 
-                    isFirst={idx === 0} 
-                    isLast={idx === ROADMAP.length - 1} 
+                    isFirst={phase.id === 1} 
+                    isLast={phase.id === 4} 
                     t={t}
                   />
                 ))}
@@ -614,26 +650,26 @@ export default function App() {
       </main>
 
       <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-6 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
-        <NavItem key="nav-lend" icon={TrendingUp} label={t('lend_tab')} isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-        <NavItem key="nav-roadmap" icon={Zap} label={t('roadmap_tab')} isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
-        <NavItem key="nav-protocol" icon={Info} label={t('protocol_tab')} isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
-        <NavItem key="nav-profile" icon={User} label={t('profile_tab')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+        <NavItem icon={TrendingUp} label={t('lend_tab')} isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+        <NavItem icon={Zap} label={t('roadmap_tab')} isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
+        <NavItem icon={Info} label={t('protocol_tab')} isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
+        <NavItem icon={User} label={t('profile_tab')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </nav>
 
       <AnimatePresence>
         {isPurchaseOpen && (
           <PurchaseModal 
-            key="modal-purchase"
             isOpen={isPurchaseOpen} 
             onClose={() => setIsPurchaseOpen(false)} 
             onBuy={handleBuy} 
+            t={t}
           />
         )}
         {selectedLender && (
           <SystemTestModal 
-            key={`modal-test-${selectedLender.id}`}
             lender={selectedLender} 
             onClose={() => setSelectedLender(null)} 
+            t={t}
           />
         )}
       </AnimatePresence>
