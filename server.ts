@@ -11,46 +11,26 @@ async function startServer() {
   // API routes
   app.post("/api/chat", async (req, res) => {
     try {
-      const { message, history } = req.body;
+      const { message } = req.body;
       
       const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
         console.error("Critical: GEMINI_API_KEY is missing");
-        return res.status(500).json({ error: "Server Configuration Error: API Key missing." });
+        return res.json({ text: "Серверная ошибка: Отсутствует API ключ (GEMINI_API_KEY).", isError: true });
       }
 
-      // Strict Validation and Sanitization of History
-      let validatedContents: any[] = [];
-      const rawHistory = history || [];
-
-      // Add history to contents
-      if (rawHistory.length > 0) {
-        const cleaned = rawHistory.filter((m: any) => 
-          m.role && m.parts && m.parts[0] && m.parts[0].text && m.parts[0].text.trim() !== ""
-        );
-
-        for (const msg of cleaned) {
-          if (validatedContents.length > 0 && validatedContents[validatedContents.length - 1].role === msg.role) {
-            validatedContents[validatedContents.length - 1].parts[0].text += "\n" + msg.parts[0].text;
-          } else {
-            validatedContents.push({
-              role: msg.role === 'model' ? 'model' : 'user',
-              parts: [{ text: msg.parts[0].text }]
-            });
-          }
+      // Simplified payload (No history for diagnosis)
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [{ text: message }]
+        }],
+        systemInstruction: {
+          parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian. Answer concisely." }]
         }
-      }
+      };
 
-      // Ensure alternating sequence and starts with user
-      if (validatedContents.length > 0 && validatedContents[0].role !== 'user') validatedContents.shift();
-      
-      // Add current message
-      validatedContents.push({
-        role: "user",
-        parts: [{ text: message }]
-      });
-
-      console.log("Отправляю в ИИ (Direct Fetch):", JSON.stringify({ contents: validatedContents }, null, 2));
+      console.log("Payload sent to Google:", JSON.stringify(payload));
 
       // 1. ABSOLUTE ANONYMIZATION: Create clean headers manually
       const cleanHeaders = {
@@ -61,12 +41,7 @@ async function startServer() {
       const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: cleanHeaders,
-        body: JSON.stringify({
-          contents: validatedContents,
-          systemInstruction: {
-            parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian. Answer concisely." }]
-          }
-        })
+        body: JSON.stringify(payload)
       });
 
       console.log("STATUS FROM GOOGLE:", googleResponse.status);
@@ -74,10 +49,10 @@ async function startServer() {
       if (!googleResponse.ok) {
         const errorData = await googleResponse.text();
         console.error("GOOGLE ERROR BODY:", errorData);
+        // Return full error for debugging in the UI
         return res.json({ 
-          text: `Банкир временно недоступен (Код: ${googleResponse.status}).`, 
-          isError: true,
-          debugStatus: googleResponse.status 
+          text: `Ошибка Google: ${googleResponse.status} ${errorData}`, 
+          isError: true 
         });
       }
 
@@ -87,7 +62,7 @@ async function startServer() {
       res.json({ text });
     } catch (error: any) {
       console.error("Server Proxy Critical Failure:", error);
-      res.json({ text: "Банкир занят. Попробуйте позже.", isError: true });
+      res.json({ text: `Критическая ошибка сервера: ${error.message}`, isError: true });
     }
   });
 
