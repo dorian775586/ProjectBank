@@ -19,8 +19,17 @@ async function startServer() {
       const { message, history } = req.body;
       
       if (!apiKey) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is missing on server side" });
+        console.error("Critical: GEMINI_API_KEY is missing");
+        return res.status(500).json({ error: "Server Configuration Error: API Key missing." });
       }
+
+      // Validating history to prevent Pattern Mismatch
+      // Roles must alternate: user, model, user, model...
+      // And must not have two identical roles in a row.
+      const validatedHistory = (history || []).filter((item: any, index: number, self: any[]) => {
+        if (index === 0) return item.role === 'user';
+        return item.role !== self[index-1].role;
+      });
 
       const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
@@ -28,15 +37,20 @@ async function startServer() {
       });
 
       const chat = model.startChat({
-        history: history || [],
+        history: validatedHistory,
       });
 
       const result = await chat.sendMessage(message);
-      const responseText = result.response.text();
-      res.json({ text: responseText });
+      const response = await result.response;
+      const text = response.text();
+      
+      res.json({ text });
     } catch (error: any) {
-      console.error("Gemini Error:", error);
-      res.status(500).json({ error: error.message || "Failed to get response from AI" });
+      console.error("Gemini Proxy Error:", error);
+      // Return a clean error to the frontend
+      const status = error.status || 500;
+      const message = error.message || "AI Protocol Failure";
+      res.status(status).json({ error: message });
     }
   });
 

@@ -33,32 +33,54 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
   }, [userId]);
 
   const fetchData = async () => {
+    if (!userId || userId === '00000') {
+      console.log('Quest: Waiting for valid User ID...');
+      return;
+    }
+    
     try {
       setLoading(true);
-      console.log('Fetching quest data for user:', userId);
+      console.log('Quest: Initializing Protocol for', userId);
       
-      // 1. Get or Init user progress
-      const { data: progress, error: pError } = await supabase
+      // 1. Get user progress (with retry/init logic)
+      let { data: progress, error: pError } = await supabase
         .from('user_quests')
         .select('current_step')
         .eq('user_id', userId)
         .maybeSingle();
       
-      if (pError) throw pError;
+      if (pError) {
+        console.error('Quest: DB Fetch Error:', pError);
+        throw pError;
+      }
       
       if (progress) {
-        console.log('Loaded progress:', progress.current_step);
+        console.log('Quest: Progress found:', progress.current_step);
         setCurrentStep(progress.current_step);
       } else {
-        console.log('No progress found, initializing via upsert...');
+        console.log('Quest: No progress found. Initializing record...');
         const { data: newData, error: iError } = await supabase
           .from('user_quests')
-          .upsert({ user_id: userId, current_step: 1 })
+          .upsert({ user_id: userId, current_step: 1 }, { onConflict: 'user_id' })
           .select()
           .single();
         
-        if (iError) throw iError;
-        setCurrentStep(newData.current_step || 1);
+        if (iError) {
+          console.error('Quest: DB Init Error:', iError);
+          // If it already exists (race condition), try fetching again
+          if (iError.code === '23505') {
+            const { data: retryData } = await supabase
+              .from('user_quests')
+              .select('current_step')
+              .eq('user_id', userId)
+              .maybeSingle();
+            if (retryData) setCurrentStep(retryData.current_step);
+          } else {
+            throw iError;
+          }
+        } else {
+          setCurrentStep(newData?.current_step || 1);
+        }
       }
 
       // 2. Get all questions (ordered)
@@ -70,48 +92,71 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
       if (qError) throw qError;
       setQuestions(qs || []);
     } catch (err: any) {
-      console.error('Quest Load Error:', err);
+      console.error('Quest Loading Failure:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleOverride = async (questionId: number) => {
-    if (!answer.trim() || submitting) return;
+    if (!answer.trim() || submitting || !userId) return;
     
-    setSubmitting(questionId);
+    const submittedStep = questionId;
+    setSubmitting(submittedStep);
     setErrorMsg(null);
     
     try {
-      console.log('Verifying answer for question:', questionId);
+      console.log(`Quest: Verifying Segment ${submittedStep}...`);
+      
       // Secure verification via RPC
       const { data: isCorrect, error: rpcError } = await supabase.rpc('check_quest_answer', {
-        q_id: questionId,
+        q_id: submittedStep,
         u_answer: answer.trim().toLowerCase()
       });
 
       if (rpcError) throw rpcError;
 
       if (isCorrect) {
-        console.log('Correct answer! Updating progression...');
-        // Update Supabase Progress
+        console.log('Quest: CRACKED! Syncing with Syndicate Database...');
         const nextStep = currentStep + 1;
+        
+        // Critical: Update DB first and WAIT for confirmation
         const { error: upError } = await supabase
           .from('user_quests')
-          .update({ current_step: nextStep })
-          .eq('user_id', userId);
+          .upsert({ 
+            user_id: userId, 
+            current_step: nextStep,
+            updated_at: new Date().toISOString() 
+          }, { onConflict: 'user_id' });
 
-        if (upError) throw upError;
+        if (upError) {
+          console.error('Quest: Sync Error:', upError);
+          throw new Error('DATABASE_SYNC_FAILURE: Progress not recorded.');
+        }
 
-        // Glitch Success Feedback
+        console.log('Quest: Sync Successful. New protocol step:', nextStep);
+        
+        // Update local state and clear input
         setCurrentStep(nextStep);
         setAnswer('');
+        
+        // Final verification fetch to be 100% sure UI is in sync with DB
+        const { data: verified } = await supabase
+          .from('user_quests')
+          .select('current_step')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (verified && verified.current_step !== nextStep) {
+          console.warn('Quest: State mismatch detected. Rectifying...');
+          setCurrentStep(verified.current_step);
+        }
+
       } else {
         setErrorMsg(t('quest_error'));
       }
     } catch (err: any) {
-      console.error('Submit Error:', err);
-      setErrorMsg(err.message);
+      console.error('Quest Action Failure:', err);
+      setErrorMsg(err.message || 'COMM_LINK_ERROR: Protocol failed.');
     } finally {
       setSubmitting(null);
     }
