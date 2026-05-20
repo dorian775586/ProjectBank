@@ -55,18 +55,17 @@ export default async function handler(req: any, res: any) {
 
     // Если после удаления всё еще не user (или пусто), и мы хотим добавить текущий user месседж:
     // Мы просто добавляем текущее сообщение. Gemini ожидает [user, model, user, model, ..., user]
+    const systemPrompt = "Инструкция: Ты ассистент ProjectBank. Ты помогаешь пользователям с криптой, кредитами и информацией о проектах. Твой язык по умолчанию: Русский. Отвечай кратко. Сообщение пользователя: ";
+
     validatedContents.push({
       role: "user",
-      parts: [{ text: message }]
+      parts: [{ text: systemPrompt + (message || "") }]
     });
 
     console.log("FINAL HISTORY SENT TO GOOGLE:", JSON.stringify(validatedContents, null, 2));
 
     const payload = {
-      contents: validatedContents,
-      system_instruction: {
-        parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian. Answer concisely." }]
-      }
+      contents: validatedContents
     };
 
     // --- 4. АНОНИМИЗАЦИЯ ЗАПРОСА (ЧИСТЫЕ HEADERS) ---
@@ -75,7 +74,7 @@ export default async function handler(req: any, res: any) {
     };
 
     // --- 5. ВЫЗОВ GOOGLE API ---
-    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: cleanHeaders,
       body: JSON.stringify(payload)
