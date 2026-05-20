@@ -118,11 +118,11 @@ const RoadmapItem = ({ phase, isFirst, isLast }: { phase: RoadmapPhase, isFirst:
             >
               <div className="pt-5 mt-4 border-t border-white/5 space-y-3">
                 {phase.items.map((item, i) => (
-                  <div key={i} className="flex items-center space-x-3">
-                    <div className={`w-1 h-1 rounded-full ${isActive ? 'bg-emerald-green' : 'bg-white/20'}`} />
-                    <span className="text-xs text-white/60 font-medium">{item}</span>
-                  </div>
-                ))}
+                    <div key={`phase-${phase.id}-item-${i}`} className="flex items-center space-x-3">
+                      <div className={`w-1 h-1 rounded-full ${isActive ? 'bg-emerald-green' : 'bg-white/20'}`} />
+                      <span className="text-xs text-white/60 font-medium">{item}</span>
+                    </div>
+                  ))}
               </div>
             </motion.div>
           )}
@@ -356,7 +356,7 @@ export default function App() {
                 <div id="lenders-list" className="space-y-3">
                   {LENDERS.map((lender) => (
                     <motion.div 
-                      key={lender.id}
+                      key={`lender-card-${lender.id}`}
                       className="bg-[#0a0a0a] border border-white/5 p-4 rounded-2xl hover:border-emerald-green/20 transition-colors"
                     >
                       <div className="flex justify-between items-start mb-4">
@@ -416,7 +416,7 @@ export default function App() {
               <div className="relative">
                 {ROADMAP.map((phase, idx) => (
                   <RoadmapItem 
-                    key={phase.id} 
+                    key={`roadmap-phase-${phase.id}`} 
                     phase={phase} 
                     isFirst={idx === 0} 
                     isLast={idx === ROADMAP.length - 1} 
@@ -555,22 +555,28 @@ export default function App() {
       </main>
 
       <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-6 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
-        <NavItem icon={TrendingUp} label="Lend" isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-        <NavItem icon={Zap} label="Roadmap" isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
-        <NavItem icon={Info} label="Protocol" isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
-        <NavItem icon={User} label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+        <NavItem key="nav-lend" icon={TrendingUp} label="Lend" isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+        <NavItem key="nav-roadmap" icon={Zap} label="Roadmap" isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
+        <NavItem key="nav-protocol" icon={Info} label="Protocol" isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
+        <NavItem key="nav-profile" icon={User} label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </nav>
 
       <AnimatePresence>
-        <PurchaseModal 
-          isOpen={isPurchaseOpen} 
-          onClose={() => setIsPurchaseOpen(false)} 
-          onBuy={handleBuy} 
-        />
-        <SystemTestModal 
-          lender={selectedLender} 
-          onClose={() => setSelectedLender(null)} 
-        />
+        {isPurchaseOpen && (
+          <PurchaseModal 
+            key="modal-purchase"
+            isOpen={isPurchaseOpen} 
+            onClose={() => setIsPurchaseOpen(false)} 
+            onBuy={handleBuy} 
+          />
+        )}
+        {selectedLender && (
+          <SystemTestModal 
+            key={`modal-test-${selectedLender.id}`}
+            lender={selectedLender} 
+            onClose={() => setSelectedLender(null)} 
+          />
+        )}
       </AnimatePresence>
     </div>
   );
