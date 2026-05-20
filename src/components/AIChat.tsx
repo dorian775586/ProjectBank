@@ -69,7 +69,7 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
       const modelMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: data.text || '',
+        text: data.text || 'Банкир промолчал.',
         timestamp: new Date(),
       };
 
@@ -79,7 +79,7 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: 'Банкир занят. Попробуйте позже.',
+        text: `Ошибка: ${error.message}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);

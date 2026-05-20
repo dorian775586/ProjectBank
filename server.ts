@@ -12,6 +12,11 @@ async function startServer() {
   app.post("/api/chat", async (req, res) => {
     try {
       const { message } = req.body;
+
+      // --- КРИТИЧЕСКАЯ ПРОВЕРКА ОБНОВЛЕНИЯ КОДА ---
+      if (message && message.toString().toUpperCase().trim() === "ТЕСТ") {
+        return res.json({ text: "СЕРВЕР ОБНОВЛЕН, ВИЖУ ТЕБЯ" });
+      }
       
       const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
