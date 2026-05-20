@@ -75,7 +75,7 @@ export default async function handler(req: any, res: any) {
     };
 
     // --- 5. ВЫЗОВ GOOGLE API ---
-    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: cleanHeaders,
       body: JSON.stringify(payload)
