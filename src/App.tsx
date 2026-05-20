@@ -311,25 +311,46 @@ export default function App() {
 
     const syncUserWithSupabase = async (user: any) => {
       try {
-        const { data, error } = await supabase
+        // 1. First, try to fetch the existing profile
+        const { data: profile, error: fetchError } = await supabase
           .from('profiles')
-          .upsert({ 
-            id: user.id.toString(), 
-            name: user.first_name || 'User',
-            coins: 0, // Initial balance
-            updated_at: new Date().toISOString()
-          })
-          .select();
+          .select('coins')
+          .eq('id', user.id.toString())
+          .maybeSingle();
 
-        if (error) {
-          alert(`Supabase Sync Error: ${error.message}\nTable: profiles\nCode: ${error.code}`);
+        if (fetchError) throw fetchError;
+
+        if (profile) {
+          // User exists: Load their coins balance into state
+          setBalance(profile.coins || 0);
+          
+          // Update metadata (name, updated_at) without resetting coins
+          await supabase
+            .from('profiles')
+            .upsert({ 
+              id: user.id.toString(), 
+              name: user.first_name || 'User',
+              updated_at: new Date().toISOString()
+            });
+          
+          alert(`Supabase Status: Data Loaded. Balance: ${profile.coins} $BANK`);
         } else {
-          console.log('Supabase Sync Success:', data);
-          // Show success alert only on first load as requested
-          alert(`Supabase Status: Connected as ${user.first_name}. Success code: 200`);
+          // User does NOT exist: Create new profile with 0 coins
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({ 
+              id: user.id.toString(), 
+              name: user.first_name || 'User',
+              coins: 0,
+              updated_at: new Date().toISOString()
+            });
+
+          if (createError) throw createError;
+          setBalance(0);
+          alert(`Supabase Status: New profile created for ${user.first_name}.`);
         }
       } catch (err: any) {
-        alert(`Supabase Exception: ${err.message}`);
+        alert(`Supabase Sync Error: ${err.message}\nTable: profiles`);
       }
     };
 
