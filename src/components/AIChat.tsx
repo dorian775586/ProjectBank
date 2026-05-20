@@ -75,11 +75,11 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
 
       setMessages(prev => [...prev, modelMsg]);
     } catch (error: any) {
-      console.error('Gemini Server Error:', error);
+      console.error('AI Chat Error:', error);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: `Error: ${error.message || 'Failed to connect to Gemini API'}`,
+        text: 'Банкир занят. Попробуйте позже.',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
