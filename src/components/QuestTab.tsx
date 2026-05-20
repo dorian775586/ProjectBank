@@ -27,7 +27,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (userId) {
+    if (userId && userId !== '00000') {
       fetchData();
     }
   }, [userId]);
@@ -37,7 +37,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
       setLoading(true);
       console.log('Fetching quest data for user:', userId);
       
-      // 1. Get user progress (with retry/init logic)
+      // 1. Get or Init user progress
       const { data: progress, error: pError } = await supabase
         .from('user_quests')
         .select('current_step')
@@ -50,14 +50,15 @@ export const QuestTab: React.FC<QuestTabProps> = ({ userId, t, isAdmin }) => {
         console.log('Loaded progress:', progress.current_step);
         setCurrentStep(progress.current_step);
       } else {
-        console.log('No progress found, initializing...');
-        const { error: iError } = await supabase
+        console.log('No progress found, initializing via upsert...');
+        const { data: newData, error: iError } = await supabase
           .from('user_quests')
-          .insert({ user_id: userId, current_step: 1 })
+          .upsert({ user_id: userId, current_step: 1 })
           .select()
           .single();
-        if (iError && iError.code !== '23505') throw iError; // 23505 is unique violation (already exists)
-        setCurrentStep(1);
+        
+        if (iError) throw iError;
+        setCurrentStep(newData.current_step || 1);
       }
 
       // 2. Get all questions (ordered)

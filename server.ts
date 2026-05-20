@@ -23,11 +23,8 @@ async function startServer() {
       }
 
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash-latest",
-        systemInstruction: {
-          role: "system",
-          parts: [{ text: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian." }]
-        }
+        model: "gemini-1.5-flash",
+        systemInstruction: "You are the ProjectBank Assistant. You help users with crypto, credit, and project info. Default language: Russian.",
       });
 
       const chat = model.startChat({
