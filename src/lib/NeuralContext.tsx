@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 
+interface NeuralBlock {
+  id: string;
+  reward: number;
+  timestamp: string;
+  mode: string;
+}
+
 interface NeuralState {
   intelligence: number;
+  workAccumulated: number;
+  blocks: NeuralBlock[];
   energy: number;
   maxEnergy: number;
-  loadFactor: number; // 0.2, 0.5, 0.9
+  loadFactor: number;
   status: 'IDLE' | 'TRAINING' | 'COOLING';
   difficulty: number;
   lastUpdate: number;
@@ -23,6 +32,8 @@ const NeuralContext = createContext<NeuralContextType | undefined>(undefined);
 export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: string | null }> = ({ children, userId }) => {
   const [state, setState] = useState<NeuralState>({
     intelligence: 0,
+    workAccumulated: 0,
+    blocks: [],
     energy: 3600,
     maxEnergy: 3600,
     loadFactor: 0,
@@ -76,7 +87,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       ...prev,
       energy: prev.maxEnergy,
       intelligence: newBalance,
-      status: prev.energy <= 0 ? 'IDLE' : prev.status
+      status: prev.energy <= 0 ? 'IDLE' : 'IDLE'
     }));
 
     if (userId) {
@@ -94,28 +105,44 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       setState(prev => {
         const now = Date.now();
         const delta = (now - prev.lastUpdate) / 1000;
-        let { energy, intelligence, status, loadFactor, difficulty } = prev;
+        let { energy, intelligence, status, loadFactor, difficulty, workAccumulated, blocks } = prev;
 
         // Energy logic
         if (status === 'TRAINING') {
-          const drainRate = loadFactor === 0.9 ? 1 : (loadFactor === 0.5 ? 0.5 : 0.1);
+          // AGGRESSIVE DRAIN: 10/sec for Force, 5 for Balanced
+          const drainRate = loadFactor === 0.9 ? 12 : (loadFactor === 0.5 ? 6 : 2);
           energy = Math.max(0, energy - drainRate * delta);
           
           if (energy <= 0) {
             status = 'COOLING';
           } else {
-            // Formula: reward_per_sec = (load_factor * base_rate) / difficulty
-            const baseRate = 0.0001;
-            const reward = (loadFactor * baseRate * delta) / difficulty;
-            intelligence += reward;
+            const baseRate = 0.005; // Base work unit
+            const workDone = (loadFactor * baseRate * delta) / difficulty;
+            workAccumulated += workDone;
             
-            // Subtle difficulty drift
-            difficulty = Math.min(2.0, difficulty + 0.00001 * delta);
+            // Block mining threshold
+            const threshold = 0.002; 
+            if (workAccumulated >= threshold) {
+              const reward = workAccumulated;
+              intelligence += reward;
+              workAccumulated = 0;
+              
+              // Add to history
+              const newBlock: NeuralBlock = {
+                id: `#${Math.floor(Math.random() * 9000) + 1000}`,
+                reward,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                mode: Object.keys({ 'Low': 0.2, 'Balanced': 0.5, 'Neural Force': 0.9 }).find(k => (({ 'Low': 0.2, 'Balanced': 0.5, 'Neural Force': 0.9 } as any)[k]) === loadFactor) || 'Compute'
+              };
+              blocks = [newBlock, ...blocks.slice(0, 9)];
+            }
+            
+            difficulty = Math.min(2.5, difficulty + 0.00005 * delta);
           }
         } else {
           // Passive recovery
-          energy = Math.min(prev.maxEnergy, energy + 1 * delta);
-          if (status === 'COOLING' && energy >= prev.maxEnergy * 0.2) {
+          energy = Math.min(prev.maxEnergy, energy + 2 * delta);
+          if (status === 'COOLING' && energy >= prev.maxEnergy * 0.1) {
             status = 'IDLE';
           }
         }
@@ -126,10 +153,12 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
           intelligence,
           status,
           difficulty,
+          workAccumulated,
+          blocks,
           lastUpdate: now
         };
       });
-    }, 1000);
+    }, 500); // Faster tick for smoother drain
 
     return () => clearInterval(timer);
   }, []);

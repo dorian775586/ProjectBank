@@ -33,7 +33,7 @@ import { ComputeDashboard } from './components/ComputeDashboard';
 
 // --- Constants & Types ---
 
-type Tab = 'dashboard' | 'compute' | 'roadmap' | 'profile' | 'ai' | 'quest';
+type Tab = 'compute' | 'roadmap' | 'profile' | 'ai' | 'quest';
 
 interface RoadmapPhase {
   id: number;
@@ -282,10 +282,8 @@ const SystemTestModal: React.FC<SystemTestModalProps> = ({ lender, onClose, t })
 // --- Main App Component ---
 
 const AppContent = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>('compute');
   const { intelligence: balance } = useNeural();
-  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
-  const [selectedLender, setSelectedLender] = useState<Lender | null>(null);
   const [userData, setUserData] = useState({ name: 'User', id: '00000', isAdmin: false });
   const [lang, setLang] = useState<Language>('en');
 
@@ -468,92 +466,13 @@ const AppContent = () => {
           </div>
         </div>
         
-        <div className="flex items-center bg-[#111] rounded-full pl-3 pr-1 py-1 border border-white/5 shadow-inner">
-          <span className="text-xs font-bold text-gold mr-2">{balance.toLocaleString()} $BANK</span>
-          <button 
-            onClick={() => setIsPurchaseOpen(true)}
-            className="w-7 h-7 bg-gold rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-[0_0_15px_rgba(255,204,0,0.3)] hover:shadow-[0_0_20px_rgba(255,204,0,0.5)]"
-          >
-            <Plus className="text-black w-4 h-4 stroke-[3]" />
-          </button>
+        <div className="flex items-center bg-[#111] rounded-full px-4 py-1.5 border border-white/5 shadow-inner">
+          <span className="text-xs font-bold text-gold">{balance.toLocaleString()} $BANK</span>
         </div>
       </header>
 
       <main className="flex-1 max-w-md mx-auto w-full">
         <AnimatePresence mode="wait">
-          {activeTab === 'dashboard' && (
-            <motion.div 
-              key="dashboard"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="px-4 pt-6 space-y-6"
-            >
-              <section id="welcome-hero" className="space-y-2">
-                <div className="flex items-center space-x-2 text-emerald-green font-mono text-[10px] uppercase tracking-widest bg-emerald-green/5 w-fit px-2 py-0.5 rounded border border-emerald-green/10">
-                  < Zap className="w-3 h-3" />
-                  <span>{t('decentralized_liquidity')}</span>
-                </div>
-                <h1 className="text-3xl font-bold text-white tracking-tight leading-tight">
-                  {t('welcome_title')} <br />
-                  <span className="text-emerald-green">{t('welcome_subtitle')}</span>
-                </h1>
-                <p className="text-white/50 text-sm leading-relaxed">
-                  {t('welcome_desc')}
-                </p>
-              </section>
-
-              <div className="space-y-4">
-                <h3 className="text-white font-bold flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-gold" />
-                  <span>{t('available_liquidity')}</span>
-                </h3>
-                
-                <div id="lenders-list" className="space-y-3">
-                  {LENDERS.map((lender) => (
-                    <motion.div 
-                      key={`lender-card-${lender.id}`}
-                      className="bg-[#0a0a0a] border border-white/5 p-4 rounded-2xl hover:border-emerald-green/20 transition-colors"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${lender.isAI ? 'bg-emerald-green/10 border border-emerald-green/20' : 'bg-white/5 border border-white/10'}`}>
-                            {lender.isAI ? <Cpu className="text-emerald-green w-5 h-5" /> : <User className="text-white/40 w-5 h-5" />}
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h4 className="text-sm font-bold text-white">{lender.name}</h4>
-                              {lender.isAI && <span className="text-[8px] bg-emerald-green text-black px-1 rounded font-black tracking-tighter">AI</span>}
-                            </div>
-                            <span className="text-[10px] text-white/40 font-mono italic">{lender.term}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-emerald-green font-bold text-lg leading-none">${lender.amount.toLocaleString()}</div>
-                          <span className="text-[10px] text-white/30 font-medium">{t('max_limit')}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-white/30 font-bold uppercase tracking-wider">{t('annual_rate')}</span>
-                          <span className="text-sm font-bold text-gold">{lender.rate}% <span className="text-[10px] font-normal opacity-50 italic">APY</span></span>
-                        </div>
-                        <button 
-                          onClick={() => setSelectedLender(lender)}
-                          className="bg-white/5 hover:bg-emerald-green hover:text-black py-2 px-6 rounded-xl text-xs font-bold transition-all flex items-center space-x-2"
-                        >
-                          <span>{t('take_loan')}</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
           {activeTab === 'compute' && (
             <motion.div 
               key="compute"
@@ -765,21 +684,6 @@ const AppContent = () => {
       </nav>
 
       <AnimatePresence>
-        {isPurchaseOpen && (
-          <PurchaseModal 
-            isOpen={isPurchaseOpen} 
-            onClose={() => setIsPurchaseOpen(false)} 
-            onBuy={handleBuy} 
-            t={t}
-          />
-        )}
-        {selectedLender && (
-          <SystemTestModal 
-            lender={selectedLender} 
-            onClose={() => setSelectedLender(null)} 
-            t={t}
-          />
-        )}
       </AnimatePresence>
     </div>
   );

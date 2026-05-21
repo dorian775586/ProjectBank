@@ -124,31 +124,27 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
       {/* Recent Activity */}
       <section className="space-y-4">
         <div className="flex justify-between items-center text-[10px] uppercase font-bold text-white/40 tracking-widest">
-          <span>Recent Computations</span>
+          <span>Your Computations</span>
           <History className="w-3 h-3" />
         </div>
-        <div className="space-y-2">
-          <BlockItem 
-            id="#4281" 
-            reward="0.00042" 
-            status="Verified" 
-            user="NODE_01"
-            color="bg-emerald-green/20 text-emerald-green"
-          />
-          <BlockItem 
-            id="#4280" 
-            reward="0.05120" 
-            status="Mined" 
-            user="LOCAL_CPU"
-            color="bg-blue-500/20 text-blue-400"
-          />
-          <BlockItem 
-            id="#4279" 
-            reward="0" 
-            status="Stale" 
-            user="NODE_02"
-            color="bg-white/10 text-white/30"
-          />
+        <div className="space-y-2 min-h-[100px]">
+          {blocks.length === 0 ? (
+            <div className="flex items-center justify-center h-20 text-[10px] text-white/10 uppercase tracking-widest">
+              No computations yet
+            </div>
+          ) : (
+            blocks.map((block) => (
+              <BlockItem 
+                key={block.id + block.timestamp}
+                id={block.id}
+                reward={block.reward.toFixed(5)}
+                status="Verified"
+                user="LOCAL_CPU"
+                time={block.timestamp}
+                color={block.mode === 'Neural Force' ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-green/20 text-emerald-green'}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -159,7 +155,7 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
       >
         <div className="flex items-center space-x-3 text-white/60">
           <ShieldCheck className="w-5 h-5 text-gold" />
-          <span className="text-xs uppercase font-bold font-mono">Maintenance Restoration</span>
+          <span className="text-xs uppercase font-bold font-mono">Core Maintenance</span>
         </div>
         <span className="text-[10px] text-white/30 font-mono">-0.500 PBN</span>
       </button>
@@ -167,20 +163,20 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
   );
 };
 
-const BlockItem = ({ id, reward, status, user, color }: any) => (
+const BlockItem = ({ id, reward, status, user, time, color }: any) => (
   <div className="group space-y-1">
     <div className="flex justify-between items-center">
       <div className="flex items-center space-x-2">
-        <span className="text-[10px] font-bold text-white/80">Block {id}</span>
+        <span className="text-[10px] font-bold text-white/80">Batch {id}</span>
         <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase ${color}`}>
           {status} {'->'} {reward}
         </span>
       </div>
-      <span className="text-[9px] text-white/20">04:{Math.floor(Math.random() * 59)}</span>
+      <span className="text-[9px] text-white/20">{time} UTC</span>
     </div>
     <div className="flex items-center space-x-2 text-[9px] text-white/30 border-l border-white/10 pl-3 ml-2">
       <div className="w-1.5 h-[1px] bg-white/10" />
-      <span>Created by {user}</span>
+      <span>Processed by {user}</span>
     </div>
   </div>
 );
