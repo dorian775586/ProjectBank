@@ -16,14 +16,36 @@ interface AIChatProps {
 
 export const AIChat: React.FC<AIChatProps> = ({ t }) => {
   const { intelligence, energy, loadFactor, status, difficulty, startTraining, restoreEnergy } = useNeural();
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem('nexus_chat_history');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }));
+      } catch (e) {
+        return [{
+          id: 'welcome',
+          role: 'model',
+          text: t('ai_welcome'),
+          timestamp: new Date(),
+        }];
+      }
+    }
+    return [{
       id: 'welcome',
       role: 'model',
       text: t('ai_welcome'),
       timestamp: new Date(),
-    }
-  ]);
+    }];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nexus_chat_history', JSON.stringify(messages));
+  }, [messages]);
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -56,6 +56,7 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
             <motion.div 
               initial={false}
               animate={{ width: `${energyPercent}%` }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
               className={`h-full rounded-[1px] transition-colors ${
                 energyPercent < 20 ? 'bg-red-500' : 'bg-emerald-green'
               }`}
@@ -84,8 +85,9 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
             </div>
             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
               <motion.div 
-                initial={{ width: 0 }}
+                initial={false}
                 animate={{ width: `${globalProgress}%` }}
+                transition={{ duration: 0.1, ease: 'linear' }}
                 className="h-full bg-gradient-to-r from-emerald-green/40 to-emerald-green shadow-[0_0_10px_rgba(0,255,136,0.2)]"
               />
             </div>
