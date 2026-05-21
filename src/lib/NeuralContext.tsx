@@ -138,12 +138,13 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
         let { energy, intelligence, status, loadFactor, difficulty, workAccumulated, blocks, globalMined } = prev;
 
         // Simulated Global Supply Growth (everyone mining)
-        const globalGrowthRate = 1.25; // NXS per second roughly
+        // We increment this locally between real DB syncs for visual smoothness
+        const globalGrowthRate = 0.5; 
         globalMined += globalGrowthRate * delta;
 
         // Difficulty depends on % of total supply mined
         const minedPercentage = globalMined / TOTAL_SUPPLY;
-        difficulty = 1.0 + (minedPercentage * 10.0); // Ranges from 1.0 to 11.0 as progress grows
+        difficulty = 1.0 + (minedPercentage * 15.0); // Ranges from 1.0 to 16.0+ as economy grows
 
         // Energy logic
         if (status === 'TRAINING') {
@@ -178,8 +179,8 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
             difficulty = Math.min(2.5, difficulty + 0.00005 * delta);
           }
         } else {
-          // Passive recovery - SIGNIFICANTLY FASTER
-          energy = Math.min(prev.maxEnergy, energy + 10 * delta);
+          // Passive recovery - EXTREMELY FAST (Full refill in 60s)
+          energy = Math.min(prev.maxEnergy, energy + 60 * delta);
           if (status === 'COOLING' && energy >= prev.maxEnergy * 0.1) {
             status = 'IDLE';
           }
@@ -200,6 +201,24 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
     }, 500); // Faster tick for smoother drain
 
     return () => clearInterval(timer);
+  }, []);
+
+  // Sync Global Supply from Database every 10 seconds
+  useEffect(() => {
+    const fetchGlobalMined = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_total_mined');
+        if (!error && data !== null) {
+          setState(prev => ({ ...prev, globalMined: parseFloat(data) }));
+        }
+      } catch (err) {
+        console.error("Global supply sync failed", err);
+      }
+    };
+
+    fetchGlobalMined();
+    const interval = setInterval(fetchGlobalMined, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // Sync balance to Supabase periodically
