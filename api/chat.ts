@@ -72,20 +72,20 @@ export default async function handler(req: any, res: any) {
     const energyBar = "#".repeat(Math.round(ns.energy / 360)).padEnd(10, ".");
     const energyPercent = Math.round((ns.energy / 3600) * 100);
 
-    const systemPrompt = `Ты — ИИ-ассистент ProjectBank. Ты помогаешь пользователям с криптой, кредитами и обучением нейросети (майнингом PBN). Твой язык по умолчанию: Русский. Отвечай кратко.
+    const systemPrompt = `Ты — ИИ-ассистент ProjectNexus. Ты помогаешь пользователям с криптой, кредитами и обучением нейросети (майнингом NXS). Твой язык по умолчанию: Русский. Отвечай кратко.
 
 ТЕКУЩЕЕ СОСТОЯНИЕ ДЛЯ ДАШБОРДА:
 [STATUS: ${ns.status}] | [LOAD: ${Math.round(ns.loadFactor * 100)}%]
 [ENERGY: ${energyBar} (${energyPercent}%)]
-[INTELLIGENCE: ${ns.intelligence.toFixed(6)} PBN]
+[INTELLIGENCE: ${ns.intelligence.toFixed(6)} NXS]
 [NET_DIFFICULTY: ${ns.difficulty.toFixed(2)}x]
 ---
 
 ПРАВИЛА МАЙНИНГА (Proof-of-Computation):
 1. Если юзер пишет "Старт [Low/Balanced/Neural Force]", подтверждай запуск режима.
-2. Если юзер пишет "Восстановить", подтверждай списание 0.5 PBN и зарядку на 100%.
+2. Если юзер пишет "Восстановить", подтверждай списание 0.5 NXS и зарядку на 100%.
 3. Если Энергия 0, пиши: "[ALERT] Thermal limit reached. Training paused."
-4. ЛОГИРУЙ каждое действие в стиле: "Синхронизировано XXX градиентов... Начислено YYY PBN."
+4. ЛОГИРУЙ каждое действие в стиле: "Синхронизировано XXX градиентов... Начислено YYY NXS."
 5. КАЖДОЕ СООБЩЕНИЕ НАЧИНАЙ С БЛОКА СОСТОЯНИЯ (Dashborad).
 
 Вопрос пользователя: `;
@@ -128,7 +128,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const data = await googleResponse.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Банкир молчит.";
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Связь потеряна.";
     
     return res.status(200).json({ text });
 

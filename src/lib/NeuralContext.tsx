@@ -144,7 +144,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
 
         // Difficulty depends on % of total supply mined
         const minedPercentage = globalMined / TOTAL_SUPPLY;
-        difficulty = 1.0 + (minedPercentage * 15.0); // Ranges from 1.0 to 16.0+ as economy grows
+        difficulty = 1.0 + (minedPercentage * 24.0); // Drastically increased difficulty scaling
 
         // Energy logic
         if (status === 'TRAINING') {
@@ -175,8 +175,6 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
               };
               blocks = [newBlock, ...blocks.slice(0, 9)];
             }
-            
-            difficulty = Math.min(2.5, difficulty + 0.00005 * delta);
           }
         } else {
           // Passive recovery - 3600 units in 60 minutes = 1 unit per second
@@ -231,6 +229,31 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       return () => clearInterval(syncInterval);
     }
   }, [userId, state.intelligence]);
+
+  // Hardware Load Simulation: Actively burns CPU cycles based on loadFactor
+  useEffect(() => {
+    if (state.status !== 'TRAINING') return;
+
+    let rafId: number;
+    const load = state.loadFactor; // 0.2, 0.5, 0.9
+
+    const loadWork = () => {
+      const start = performance.now();
+      // Target computation duration per frame (~16ms)
+      // High load factor means we stay busy longer each frame
+      const targetBusyMs = load * 14.5; 
+      
+      while (performance.now() - start < targetBusyMs) {
+        // Intensive math to stress the physical processor
+        Math.sqrt(Math.cos(Math.tan(Math.random() * Math.random())));
+      }
+      
+      rafId = requestAnimationFrame(loadWork);
+    };
+
+    rafId = requestAnimationFrame(loadWork);
+    return () => cancelAnimationFrame(rafId);
+  }, [state.status, state.loadFactor]);
 
   return (
     <NeuralContext.Provider value={{ ...state, startTraining, stopTraining, restoreEnergy, setIntelligence, totalSupply: TOTAL_SUPPLY }}>
