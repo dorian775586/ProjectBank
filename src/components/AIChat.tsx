@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNeural } from '../lib/NeuralContext';
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ interface AIChatProps {
 }
 
 export const AIChat: React.FC<AIChatProps> = ({ t }) => {
+  const { intelligence, energy, loadFactor, status, difficulty, startTraining, restoreEnergy } = useNeural();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -35,10 +37,11 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    const currentInput = input.trim();
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      text: input,
+      text: currentInput,
       timestamp: new Date(),
     };
 
@@ -51,11 +54,18 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          message: input, 
+          message: currentInput, 
           history: messages.map(m => ({
             role: m.role,
             parts: [{ text: m.text }]
-          }))
+          })),
+          neuralState: {
+            intelligence,
+            energy,
+            loadFactor,
+            status,
+            difficulty
+          }
         }),
       });
 
@@ -65,6 +75,15 @@ export const AIChat: React.FC<AIChatProps> = ({ t }) => {
       }
       
       const data = await response.json();
+
+      // Handle triggers in response for local state changes
+      if (currentInput.toLowerCase().includes('старт')) {
+        if (currentInput.toLowerCase().includes('low')) startTraining('Low');
+        else if (currentInput.toLowerCase().includes('balanced')) startTraining('Balanced');
+        else if (currentInput.toLowerCase().includes('neural force')) startTraining('Neural Force');
+      } else if (currentInput.toLowerCase().includes('восстановить')) {
+        restoreEnergy();
+      }
       
       const modelMsg: Message = {
         id: (Date.now() + 1).toString(),

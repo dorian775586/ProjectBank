@@ -9,7 +9,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { message, history } = req.body;
+    const { message, history, neuralState } = req.body;
 
     // --- 1. КРИТИЧЕСКАЯ ПРОВЕРКА ОБНОВЛЕНИЯ КОДА (ТЕСТ) ---
     if (message && message.toString().toUpperCase().trim() === "ТЕСТ") {
@@ -67,13 +67,32 @@ export default async function handler(req: any, res: any) {
       validatedContents.shift();
     }
 
-    // Если после удаления всё еще не user (или пусто), и мы хотим добавить текущий user месседж:
-    // Мы просто добавляем текущее сообщение. Gemini ожидает [user, model, user, model, ..., user]
-    const finalPrompt = "Ты ИИ-ассистент ProjectBank. Отвечай кратко на русском. Вопрос: " + (message || "");
+    // --- 4. SYSTEM PROMPT INJECTION ---
+    const ns = neuralState || { intelligence: 0, energy: 3600, loadFactor: 0, status: 'IDLE', difficulty: 1.0 };
+    const energyBar = "#".repeat(Math.round(ns.energy / 360)).padEnd(10, ".");
+    const energyPercent = Math.round((ns.energy / 3600) * 100);
+
+    const systemPrompt = `Ты — ИИ-ассистент ProjectBank. Ты помогаешь пользователям с криптой, кредитами и обучением нейросети (майнингом PBN). Твой язык по умолчанию: Русский. Отвечай кратко.
+
+ТЕКУЩЕЕ СОСТОЯНИЕ ДЛЯ ДАШБОРДА:
+[STATUS: ${ns.status}] | [LOAD: ${Math.round(ns.loadFactor * 100)}%]
+[ENERGY: ${energyBar} (${energyPercent}%)]
+[INTELLIGENCE: ${ns.intelligence.toFixed(6)} PBN]
+[NET_DIFFICULTY: ${ns.difficulty.toFixed(2)}x]
+---
+
+ПРАВИЛА МАЙНИНГА (Proof-of-Computation):
+1. Если юзер пишет "Старт [Low/Balanced/Neural Force]", подтверждай запуск режима.
+2. Если юзер пишет "Восстановить", подтверждай списание 0.5 PBN и зарядку на 100%.
+3. Если Энергия 0, пиши: "[ALERT] Thermal limit reached. Training paused."
+4. ЛОГИРУЙ каждое действие в стиле: "Синхронизировано XXX градиентов... Начислено YYY PBN."
+5. КАЖДОЕ СООБЩЕНИЕ НАЧИНАЙ С БЛОКА СОСТОЯНИЯ (Dashborad).
+
+Вопрос пользователя: `;
 
     validatedContents.push({
       role: "user",
-      parts: [{ text: finalPrompt }]
+      parts: [{ text: systemPrompt + (message || "") }]
     });
 
     console.log("FINAL HISTORY SENT TO GOOGLE:", JSON.stringify(validatedContents, null, 2));
@@ -82,7 +101,7 @@ export default async function handler(req: any, res: any) {
       contents: validatedContents
     };
 
-    // --- 4. АНОНИМИЗАЦИЯ ЗАПРОСА (ЧИСТЫЕ HEADERS) ---
+    // --- 5. АНОНИМИЗАЦИЯ ЗАПРОСА (ЧИСТЫЕ HEADERS) ---
     const cleanHeaders = {
       'Content-Type': 'application/json'
     };
