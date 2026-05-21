@@ -6,6 +6,24 @@ import { useNeural } from '../lib/NeuralContext';
 export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
   const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy, blocks, globalMined, totalSupply } = useNeural();
 
+  const [liveNodes, setLiveNodes] = React.useState(12400);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveNodes(prev => {
+        // Mostly under 20k (70% chance to target lower range)
+        const targetLow = Math.random() < 0.7;
+        const target = targetLow 
+          ? 7800 + Math.random() * 12200 // 7.8k - 20k
+          : 20000 + Math.random() * 25500; // 20k - 45.5k
+        
+        // Smooth transition towards target
+        return prev + (target - prev) * 0.1;
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const energyPercent = (energy / maxEnergy) * 100;
   const globalProgress = (globalMined / totalSupply) * 100;
 
@@ -56,8 +74,12 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
           </div>
           
           <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-mono">
-              <span className="text-white/30">Mined: {globalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <div className="flex justify-between text-[10px] font-mono items-center">
+              <div className="flex items-center space-x-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-green animate-pulse shadow-[0_0_5px_rgba(0,255,136,0.5)]" />
+                <span className="text-white/40 uppercase tracking-tighter">Live:</span>
+                <span className="text-white font-bold">{Math.floor(liveNodes).toLocaleString()}</span>
+              </div>
               <span className="text-gold">{globalProgress.toFixed(4)}%</span>
             </div>
             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">

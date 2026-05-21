@@ -41,12 +41,12 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
 
     let energy = savedEnergy ? parseFloat(savedEnergy) : 3600;
     const lastUpdate = savedLastUpdate ? parseInt(savedLastUpdate) : Date.now();
-    const globalMined = savedGlobalMined ? parseFloat(savedGlobalMined) : 10000000; // Start at 10M (1%)
+    const globalMined = savedGlobalMined ? parseFloat(savedGlobalMined) : 234500600; // Start at 234M (23%)
 
     // Offline Energy Recovery
     if (lastUpdate < Date.now()) {
       const deltaSeconds = (Date.now() - lastUpdate) / 1000;
-      const recoveryRate = 5.0; // Rapid offline recovery
+      const recoveryRate = 1.0; // 3600 units in 60 minutes = 1 unit per second
       // User requested energy to recover even offline.
       energy = Math.min(3600, energy + recoveryRate * deltaSeconds);
     }
@@ -139,7 +139,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
 
         // Simulated Global Supply Growth (everyone mining)
         // We increment this locally between real DB syncs for visual smoothness
-        const globalGrowthRate = 0.5; 
+        const globalGrowthRate = 15.5; 
         globalMined += globalGrowthRate * delta;
 
         // Difficulty depends on % of total supply mined
@@ -179,8 +179,8 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
             difficulty = Math.min(2.5, difficulty + 0.00005 * delta);
           }
         } else {
-          // Passive recovery - EXTREMELY FAST (Full refill in 60s)
-          energy = Math.min(prev.maxEnergy, energy + 60 * delta);
+          // Passive recovery - 3600 units in 60 minutes = 1 unit per second
+          energy = Math.min(prev.maxEnergy, energy + 1 * delta);
           if (status === 'COOLING' && energy >= prev.maxEnergy * 0.1) {
             status = 'IDLE';
           }
