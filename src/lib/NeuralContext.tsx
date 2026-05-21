@@ -30,17 +30,26 @@ interface NeuralContextType extends NeuralState {
 const NeuralContext = createContext<NeuralContextType | undefined>(undefined);
 
 export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: string | null }> = ({ children, userId }) => {
-  const [state, setState] = useState<NeuralState>({
-    intelligence: 0,
-    workAccumulated: 0,
-    blocks: [],
-    energy: 3600,
-    maxEnergy: 3600,
-    loadFactor: 0,
-    status: 'IDLE',
-    difficulty: 1.0,
-    lastUpdate: Date.now(),
+  const [state, setState] = useState<NeuralState>(() => {
+    const savedEnergy = typeof window !== 'undefined' ? localStorage.getItem('neural_energy') : null;
+    const energy = savedEnergy ? parseFloat(savedEnergy) : 3600;
+    return {
+      intelligence: 0,
+      workAccumulated: 0,
+      blocks: [],
+      energy: energy,
+      maxEnergy: 3600,
+      loadFactor: 0,
+      status: 'IDLE',
+      difficulty: 1.0,
+      lastUpdate: Date.now(),
+    };
   });
+
+  // Persist energy to localStorage
+  useEffect(() => {
+    localStorage.setItem('neural_energy', state.energy.toString());
+  }, [state.energy]);
 
   // Load initial intelligence from Supabase (mapped to coins for now)
   useEffect(() => {
@@ -140,8 +149,8 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
             difficulty = Math.min(2.5, difficulty + 0.00005 * delta);
           }
         } else {
-          // Passive recovery
-          energy = Math.min(prev.maxEnergy, energy + 2 * delta);
+          // Passive recovery - SLOWED DOWN as per user request
+          energy = Math.min(prev.maxEnergy, energy + 0.1 * delta);
           if (status === 'COOLING' && energy >= prev.maxEnergy * 0.1) {
             status = 'IDLE';
           }

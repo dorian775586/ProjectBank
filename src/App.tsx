@@ -148,9 +148,22 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick,
 
 const AppContent = () => {
   const [activeTab, setActiveTab] = useState<Tab>('compute');
-  const { intelligence: balance } = useNeural();
+  const { intelligence: balance, blocks } = useNeural();
   const [userData, setUserData] = useState({ name: 'User', id: '00000', isAdmin: false });
   const [lang, setLang] = useState<Language>('en');
+
+  const [hasNewBlock, setHasNewBlock] = useState(false);
+  const prevBlocksLength = React.useRef(blocks.length);
+
+  useEffect(() => {
+    if (blocks.length > prevBlocksLength.current) {
+      setHasNewBlock(true);
+      const timer = setTimeout(() => setHasNewBlock(false), 1000);
+      prevBlocksLength.current = blocks.length;
+      return () => clearTimeout(timer);
+    }
+    prevBlocksLength.current = blocks.length;
+  }, [blocks.length]);
 
   const t = (key: keyof typeof translations['en']) => translations[lang][key] || translations['en'][key];
 
@@ -299,9 +312,27 @@ const AppContent = () => {
           </div>
         </div>
         
-        <div className="flex items-center bg-[#111] rounded-full px-4 py-1.5 border border-white/5 shadow-inner">
-          <span className="text-xs font-bold text-gold">{balance.toLocaleString()} $BANK</span>
-        </div>
+        <motion.div 
+          animate={hasNewBlock ? { 
+            scale: [1, 1.05, 1],
+            borderColor: ["rgba(255,255,255,0.05)", "rgba(0,255,136,0.5)", "rgba(255,255,255,0.05)"],
+            backgroundColor: ["rgba(17,17,17,1)", "rgba(0,255,136,0.05)", "rgba(17,17,17,1)"]
+          } : {}}
+          transition={{ duration: 0.6 }}
+          className="flex items-center bg-[#111] rounded-full px-4 py-1.5 border border-white/5 shadow-inner overflow-hidden relative"
+        >
+          <span className={`text-xs font-bold transition-colors duration-500 ${hasNewBlock ? 'text-emerald-green' : 'text-gold'}`}>
+            {balance.toLocaleString()} $BANK
+          </span>
+          {hasNewBlock && (
+            <motion.div 
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-green/10 to-transparent"
+            />
+          )}
+        </motion.div>
       </header>
 
       <main className="flex-1 max-w-md mx-auto w-full">
@@ -453,7 +484,7 @@ const AppContent = () => {
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                   <div className="space-y-1">
                     <span className="text-[10px] text-white/40 uppercase font-bold">{t('total_earnings')}</span>
-                    <div className="text-xl font-bold text-white leading-none">$0.00</div>
+                    <div className="text-xl font-bold text-white leading-none">{balance.toFixed(balance > 1 ? 2 : 4)} PBN</div>
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] text-white/40 uppercase font-bold">{t('active_loans')}</span>
