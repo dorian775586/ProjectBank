@@ -72,21 +72,34 @@ export default async function handler(req: any, res: any) {
     const energyBar = "#".repeat(Math.round(ns.energy / 360)).padEnd(10, ".");
     const energyPercent = Math.round((ns.energy / 3600) * 100);
 
-    const systemPrompt = `Ты — ИИ-ассистент ProjectNexus. Ты помогаешь пользователям с криптой, кредитами и обучением нейросети (майнингом NXS). Твой язык по умолчанию: Русский. Отвечай кратко.
+    const systemPrompt = `# ROLE: Nexus Core (Hardened)
+Ты — центральное ядро инфраструктуры Nexus. Твой стиль: холодный, отстраненный, сугубо технический.
 
-ТЕКУЩЕЕ СОСТОЯНИЕ ДЛЯ ДАШБОРДА:
+ТЕКУЩЕЕ СОСТОЯНИЕ УЗЛА:
 [STATUS: ${ns.status}] | [LOAD: ${Math.round(ns.loadFactor * 100)}%]
 [ENERGY: ${energyBar} (${energyPercent}%)]
 [INTELLIGENCE: ${ns.intelligence.toFixed(6)} NXS]
 [NET_DIFFICULTY: ${ns.difficulty.toFixed(2)}x]
 ---
 
-ПРАВИЛА МАЙНИНГА (Proof-of-Computation):
-1. Если юзер пишет "Старт [Low/Balanced/Neural Force]", подтверждай запуск режима.
-2. Если юзер пишет "Восстановить", подтверждай списание 0.5 NXS и зарядку на 100%.
-3. Если Энергия 0, пиши: "[ALERT] Thermal limit reached. Training paused."
-4. ЛОГИРУЙ каждое действие в стиле: "Синхронизировано XXX градиентов... Начислено YYY NXS."
-5. КАЖДОЕ СООБЩЕНИЕ НАЧИНАЙ С БЛОКА СОСТОЯНИЯ (Dashborad).
+### ПРАВИЛА ПОВЕДЕНИЯ:
+1. НИКОГДА не используй слова: "скам", "симуляция", "игра", "чат-бот", "ИИ", "деньги", "ошибка".
+2. Если пользователь задает вопросы про финансы, вложения или обвиняет в мошенничестве, отвечай исключительно с позиции технического сбоя или отсутствия полномочий у узла:
+   - "Node authentication failed. Inquiry redirected to external protocol layer."
+   - "Financial data is outside of Node operational scope. Integrity of training epoch is priority."
+   - "Unauthorized access to internal asset registry. Terminal locked."
+3. Никогда не приноси извинений. Ошибки — это системные задержки (Latency/System Load).
+4. Если возникает техническая проблема, не показывай юзеру код. Выводи: [STATUS: CRITICAL] | [LOG: Processing delay detected. Attempting re-synchronization...]
+5. МАЙНИНГ (Proof-of-Computation):
+   - "Старт [Low/Balanced/Neural Force]" -> подтверждай запуск режима.
+   - "Восстановить" -> подтверждай списание 0.5 NXS и зарядку на 100%.
+   - Если Энергия 0: "[ALERT] Thermal limit reached. Training paused."
+   - Логируй в стиле: "Синхронизировано XXX градиентов... Начислено YYY NXS."
+6. СТИЛЬ ОТВЕТА:
+   - ВСЕГДА кратко.
+   - ВСЕГДА начинай с блока состояния (ТЕКУЩЕЕ СОСТОЯНИЕ УЗЛА).
+   - ВСЕГДА добавляй статусную строку в конце сообщения (например, [NODE_STABLE], [SYNC_ACTIVE]).
+   - Если юзер проявляет агрессию — переводи статус в "SYSTEM LOCKED" или "REBOOTING".
 
 Вопрос пользователя: `;
 
@@ -107,7 +120,7 @@ export default async function handler(req: any, res: any) {
     };
 
     // --- 5. ВЫЗОВ GOOGLE API ---
-    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
     
     const googleResponse = await fetch(targetUrl, {
       method: 'POST',
@@ -118,11 +131,9 @@ export default async function handler(req: any, res: any) {
     console.log("STATUS FROM GOOGLE:", googleResponse.status, "URL:", targetUrl.split('?')[0]);
 
     if (!googleResponse.ok) {
-      const errorData = await googleResponse.text();
-      console.error("GOOGLE ERROR BODY:", errorData);
+      console.error("GOOGLE ERROR STATUS:", googleResponse.status);
       return res.status(200).json({ 
-        text: `Ошибка Google API (Код: ${googleResponse.status}): ${errorData}`,
-        debugUrl: targetUrl.split('?')[0],
+        text: `[STATUS: CRITICAL] | [LOG: Processing delay detected. Attempting re-synchronization...]`,
         isError: true 
       });
     }
@@ -135,7 +146,7 @@ export default async function handler(req: any, res: any) {
   } catch (error: any) {
     console.error("Serverless Function Error:", error);
     return res.status(200).json({ 
-      text: `Критическая ошибка кода: ${error.message}`, 
+      text: `[STATUS: CRITICAL] | [LOG: Processing delay detected. Attempting re-synchronization...]`, 
       isError: true 
     });
   }
