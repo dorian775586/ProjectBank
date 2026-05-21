@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Cpu, Zap, Activity, Battery, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Cpu, Zap, Activity, Battery, RefreshCw, AlertTriangle, ShieldCheck, Globe, History } from 'lucide-react';
 import { useNeural } from '../lib/NeuralContext';
 
 export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
-  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, restoreEnergy } = useNeural();
+  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy } = useNeural();
 
   const energyPercent = (energy / maxEnergy) * 100;
 
@@ -15,119 +15,172 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
   ];
 
   return (
-    <div className="px-4 pt-6 space-y-6 max-w-md mx-auto">
-      {/* Header Status */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">
-            Neural <span className="text-emerald-green">Compute</span>
-          </h2>
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${status === 'TRAINING' ? 'bg-emerald-green shadow-[0_0_8px_rgba(0,255,136,0.8)]' : (status === 'COOLING' ? 'bg-red-500' : 'bg-white/20')}`} />
-            <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-              Status: {status}
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] text-white/30 font-mono uppercase">Difficulty</div>
-          <div className="text-white font-mono font-bold tracking-tighter">{difficulty.toFixed(3)}x</div>
-        </div>
-      </div>
-
-      {/* Main Intelligence Display */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-[#0c0c0c] border border-white/5 rounded-3xl p-6 relative overflow-hidden group"
-      >
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <Cpu className="w-24 h-24 text-emerald-green" />
-        </div>
+    <div className="px-5 pt-8 pb-32 space-y-8 max-w-md mx-auto font-mono text-white selection:bg-emerald-green selection:text-black">
+      {/* Header Profile */}
+      <section className="space-y-4">
+        <h3 className="text-[10px] text-white/40 uppercase tracking-[2px] font-bold">Neural Profile</h3>
         
-        <div className="relative z-10">
-          <span className="text-[10px] font-mono text-emerald-green uppercase tracking-[0.3em] block mb-2">Network Intelligence</span>
-          <div className="text-4xl font-black text-white tracking-tighter flex items-center space-x-2">
-            <span>{intelligence.toFixed(6)}</span>
-            <span className="text-lg text-emerald-green/60">PBN</span>
+        <div className="flex justify-between items-end border-b border-white/5 pb-4">
+          <span className="text-sm text-white/60">Intelligence</span>
+          <div className="text-2xl font-bold tracking-tighter flex items-center space-x-2">
+            <span>{intelligence.toFixed(intelligence > 10 ? 2 : 6)}</span>
+            <span className="text-xs text-emerald-green">PBN</span>
           </div>
-          <p className="text-white/40 text-[10px] mt-4 font-mono uppercase leading-relaxed">
-            Allocated mobile compute resources to global neural backbone.
-          </p>
         </div>
-      </motion.div>
 
-      {/* Energy & Load Section */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Energy Bar */}
-        <div className="bg-[#0c0c0c] border border-white/5 rounded-2xl p-5 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Battery className={`w-4 h-4 ${energy < 500 ? 'text-red-500 animate-pulse' : 'text-emerald-green'}`} />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Core Energy</span>
-            </div>
-            <span className="text-xs font-mono text-white/60">{Math.round(energy)} / {maxEnergy}</span>
+        <div className="space-y-3">
+          <div className="flex justify-between text-[10px] uppercase font-bold">
+            <span className="text-white/60">Core Capacity</span>
+            <span className="text-emerald-green">{Math.round(energy)} / {maxEnergy}</span>
           </div>
-          
-          <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden flex p-0.5 border border-white/5">
+          <div className="h-4 w-full bg-white/5 rounded-sm overflow-hidden flex border border-white/10 p-0.5">
             <motion.div 
               initial={false}
               animate={{ width: `${energyPercent}%` }}
-              className={`h-full rounded-full ${energyPercent < 20 ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-emerald-green shadow-[0_0_15px_rgba(0,255,136,0.3)]'}`}
+              className={`h-full rounded-[1px] transition-colors ${
+                energyPercent < 20 ? 'bg-red-500' : 'bg-emerald-green'
+              }`}
             />
           </div>
-
-          {status === 'COOLING' && (
-            <div className="flex items-center space-x-2 text-red-500 text-[10px] uppercase font-bold justify-center bg-red-500/5 py-2 rounded-lg border border-red-500/10">
-              <AlertTriangle className="w-3 h-3" />
-              <span>Thermal limit reached. Training paused.</span>
-            </div>
-          )}
         </div>
+      </section>
 
-        {/* Load Selection */}
-        <div className="grid grid-cols-3 gap-3">
-          {modes.map((mode) => (
-            <button
-              key={mode.name}
-              disabled={status === 'COOLING'}
-              onClick={() => startTraining(mode.name as any)}
-              className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all active:scale-95 ${
-                loadFactor === mode.load && status === 'TRAINING'
-                  ? 'border-emerald-green bg-emerald-green/5 shadow-[0_0_20px_rgba(0,255,136,0.1)]'
-                  : 'border-white/5 bg-[#0c0c0c] disabled:opacity-50'
-              }`}
-            >
-              <div className={`text-[10px] font-black uppercase mb-1 ${mode.color}`}>{mode.name}</div>
-              <div className="text-[9px] text-white/40 font-mono">{(mode.load * 100)}% Load</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="space-y-3">
-        <button 
-          onClick={restoreEnergy}
-          className="w-full bg-gold/10 border border-gold/20 py-4 rounded-xl flex items-center justify-center space-x-3 group active:scale-95 transition-all"
-        >
-          <RefreshCw className="w-5 h-5 text-gold group-active:rotate-180 transition-transform duration-500" />
-          <div className="text-left">
-            <div className="text-xs font-bold text-white uppercase tracking-widest leading-none">Instant Restoration</div>
-            <div className="text-[10px] text-gold/60 font-mono mt-1">Cost: 0.500 PBN</div>
+      {/* Network Information */}
+      <section className="space-y-4">
+        <h3 className="text-[10px] text-white/40 uppercase tracking-[2px] font-bold">Network Information</h3>
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/30 uppercase mb-1">Difficulty</span>
+            <span className="font-bold">{difficulty.toFixed(3)}x</span>
           </div>
-        </button>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/30 uppercase mb-1">Compute Load</span>
+            <span className="font-bold">{(loadFactor * 100).toFixed(0)}%</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/30 uppercase mb-1">Epoch</span>
+            <span className="font-bold">#4,281</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/30 uppercase mb-1">Gradients</span>
+            <span className="font-bold text-emerald-green">{(intelligence * 1000).toFixed(0)}k</span>
+          </div>
+        </div>
+      </section>
 
-        <div className="bg-[#0c0c0c] border border-white/5 p-4 rounded-2xl font-mono text-[9px] text-white/30 space-y-1">
+      {/* Computing Control */}
+      <section className="space-y-4">
+        <h3 className="text-[10px] text-white/40 uppercase tracking-[2px] font-bold">Compute Control</h3>
+        <div className="bg-white/5 border border-white/10 p-5 rounded-lg space-y-6">
           <div className="flex justify-between items-center">
-            <span className="flex items-center space-x-1"><Activity className="w-3 h-3 text-emerald-green" /> <span>SYNC_LOG</span></span>
-            <span className="text-emerald-green">ONLINE</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-white/30 uppercase mb-1">Engine Status</span>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${status === 'TRAINING' ? 'bg-emerald-green animate-pulse' : 'bg-white/20'}`} />
+                <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                  status === 'TRAINING' ? 'bg-emerald-green/20 text-emerald-green' : 'bg-white/10 text-white/60'
+                }`}>
+                  {status}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-white/30 uppercase mb-1">Computation</span>
+              <span className="text-xs font-bold">{status === 'TRAINING' ? 'ACTIVE' : 'IDLE'}</span>
+            </div>
           </div>
-          <div className="opacity-60 truncate">Initializing spectral gradients... [OK]</div>
-          <div className="opacity-60 truncate">Propagating back-tensors... [OK]</div>
-          <div className="opacity-60 truncate">Synchronized {Math.floor(intelligence * 100000)} gradients.</div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {modes.map((mode) => (
+              <button
+                key={mode.name}
+                disabled={status === 'COOLING'}
+                onClick={() => startTraining(mode.name as any)}
+                className={`text-[9px] uppercase font-bold py-2 border transition-all ${
+                  loadFactor === mode.load && status === 'TRAINING'
+                    ? 'border-emerald-green text-emerald-green bg-emerald-green/5'
+                    : 'border-white/10 text-white/40 hover:border-white/30'
+                }`}
+              >
+                {mode.name}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => status === 'TRAINING' ? stopTraining() : startTraining('Balanced')}
+            className={`w-full py-4 rounded-md font-black uppercase tracking-[2px] transition-all flex items-center justify-center space-x-2 ${
+              status === 'TRAINING' 
+                ? 'bg-red-500/20 border border-red-500/30 text-red-500' 
+                : 'bg-emerald-green text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(0,255,136,0.2)]'
+            }`}
+          >
+            <Zap className={`w-4 h-4 ${status === 'TRAINING' ? 'hidden' : ''}`} />
+            <span>{status === 'TRAINING' ? 'Execute: STOP' : 'Execute: START COMPUTATION'}</span>
+          </button>
         </div>
-      </div>
+      </section>
+
+      {/* Recent Activity */}
+      <section className="space-y-4">
+        <div className="flex justify-between items-center text-[10px] uppercase font-bold text-white/40 tracking-widest">
+          <span>Recent Computations</span>
+          <History className="w-3 h-3" />
+        </div>
+        <div className="space-y-2">
+          <BlockItem 
+            id="#4281" 
+            reward="0.00042" 
+            status="Verified" 
+            user="NODE_01"
+            color="bg-emerald-green/20 text-emerald-green"
+          />
+          <BlockItem 
+            id="#4280" 
+            reward="0.05120" 
+            status="Mined" 
+            user="LOCAL_CPU"
+            color="bg-blue-500/20 text-blue-400"
+          />
+          <BlockItem 
+            id="#4279" 
+            reward="0" 
+            status="Stale" 
+            user="NODE_02"
+            color="bg-white/10 text-white/30"
+          />
+        </div>
+      </section>
+
+      {/* Maintenance */}
+      <button 
+        onClick={restoreEnergy}
+        className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded hover:bg-white/10 transition-colors group"
+      >
+        <div className="flex items-center space-x-3 text-white/60">
+          <ShieldCheck className="w-5 h-5 text-gold" />
+          <span className="text-xs uppercase font-bold font-mono">Maintenance Restoration</span>
+        </div>
+        <span className="text-[10px] text-white/30 font-mono">-0.500 PBN</span>
+      </button>
     </div>
   );
 };
+
+const BlockItem = ({ id, reward, status, user, color }: any) => (
+  <div className="group space-y-1">
+    <div className="flex justify-between items-center">
+      <div className="flex items-center space-x-2">
+        <span className="text-[10px] font-bold text-white/80">Block {id}</span>
+        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase ${color}`}>
+          {status} {'->'} {reward}
+        </span>
+      </div>
+      <span className="text-[9px] text-white/20">04:{Math.floor(Math.random() * 59)}</span>
+    </div>
+    <div className="flex items-center space-x-2 text-[9px] text-white/30 border-l border-white/10 pl-3 ml-2">
+      <div className="w-1.5 h-[1px] bg-white/10" />
+      <span>Created by {user}</span>
+    </div>
+  </div>
+);

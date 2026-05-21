@@ -135,19 +135,26 @@ interface NavItemProps {
   label: string;
   isActive: boolean;
   onClick: () => void;
+  isCenter?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick, isCenter }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center justify-center space-y-1 transition-all flex-1 py-2 ${isActive ? 'text-emerald-green' : 'text-white/40'}`}
+    className={`flex flex-col items-center justify-center transition-all flex-1 py-1 relative ${
+      isActive ? 'text-emerald-green' : 'text-white/30'
+    } ${isCenter ? 'scale-110 -translate-y-1' : ''}`}
   >
-    <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
-    <span className={`text-[10px] font-medium tracking-tight ${isActive ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
-    {isActive && (
+    <div className={`p-2 rounded-xl transition-all ${isCenter && isActive ? 'bg-emerald-green/10 shadow-[0_0_20px_rgba(0,255,136,0.1)]' : ''}`}>
+      <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+    </div>
+    <span className={`text-[8px] font-black uppercase tracking-widest ${isActive ? 'opacity-100' : 'opacity-40'}`}>
+      {label}
+    </span>
+    {isActive && !isCenter && (
       <motion.div 
         layoutId="nav-indicator"
-        className="absolute bottom-1 w-1 h-1 bg-emerald-green rounded-full shadow-[0_0_8px_rgba(0,255,136,0.8)]"
+        className="absolute bottom-[-2px] w-1 h-1 bg-emerald-green rounded-full opacity-50"
       />
     )}
   </button>
@@ -740,12 +747,18 @@ const AppContent = () => {
         </AnimatePresence>
       </main>
 
-      <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 py-2 pb-8 flex items-center justify-between z-40 max-w-md mx-auto">
+      <nav id="app-nav" className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-3xl border-t border-white/5 px-2 py-3 pb-8 flex items-center justify-around z-40 max-w-md mx-auto font-mono">
         <NavItem icon={Zap} label={t('roadmap_tab')} isActive={activeTab === 'roadmap'} onClick={() => setActiveTab('roadmap')} />
         <NavItem icon={Bot} label={t('ai_tab')} isActive={activeTab === 'ai'} onClick={() => setActiveTab('ai')} />
         
-        {/* CENTER TAB: REMADE LOANS AS COMPUTE */}
-        <NavItem icon={Activity} label="Neural" isActive={activeTab === 'compute'} onClick={() => setActiveTab('compute')} />
+        {/* CENTER TAB: MINING */}
+        <NavItem 
+          icon={Cpu} 
+          label={t('lend_tab')} 
+          isActive={activeTab === 'compute'} 
+          onClick={() => setActiveTab('compute')} 
+          isCenter
+        />
         
         <NavItem icon={Terminal} label={t('quest_tab')} isActive={activeTab === 'quest'} onClick={() => setActiveTab('quest')} />
         <NavItem icon={User} label={t('profile_tab')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />

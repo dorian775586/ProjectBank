@@ -13,6 +13,7 @@ interface NeuralState {
 
 interface NeuralContextType extends NeuralState {
   startTraining: (mode: 'Low' | 'Balanced' | 'Neural Force') => void;
+  stopTraining: () => void;
   restoreEnergy: () => void;
   setIntelligence: (val: number) => void;
 }
@@ -54,6 +55,15 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       ...prev,
       loadFactor: loads[mode],
       status: 'TRAINING',
+      lastUpdate: Date.now()
+    }));
+  };
+
+  const stopTraining = () => {
+    setState(prev => ({
+      ...prev,
+      status: 'IDLE',
+      loadFactor: 0,
       lastUpdate: Date.now()
     }));
   };
@@ -136,7 +146,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
   }, [userId, state.intelligence]);
 
   return (
-    <NeuralContext.Provider value={{ ...state, startTraining, restoreEnergy, setIntelligence }}>
+    <NeuralContext.Provider value={{ ...state, startTraining, stopTraining, restoreEnergy, setIntelligence }}>
       {children}
     </NeuralContext.Provider>
   );
