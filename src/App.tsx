@@ -5,22 +5,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Plus, 
-  Wallet, 
-  TrendingUp, 
+  Plus,
+  Wallet,
   ShieldCheck, 
-  Info, 
   User, 
   Zap, 
   Cpu, 
   ArrowUpRight, 
-  CheckCircle2,
-  AlertCircle,
-  X,
-  MessageSquare,
   Bot,
   Terminal,
-  Lock,
   Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -119,15 +112,6 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({ phase, isFirst, isLast, t }) 
   );
 };
 
-interface Lender {
-  id: string;
-  name: string;
-  amount: number;
-  rate: number;
-  term: string;
-  isAI: boolean;
-}
-
 // --- Sub-components ---
 
 interface NavItemProps {
@@ -159,125 +143,6 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick,
     )}
   </button>
 );
-
-interface PurchaseModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onBuy: () => void;
-  t: any;
-}
-
-const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, onBuy, t }) => {
-  const [amount, setAmount] = useState(100000);
-  const cost = amount * 0.01;
-
-  if (!isOpen) return null;
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <motion.div 
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="bg-[#0f0f0f] w-full max-w-md rounded-t-[32px] border-t border-white/10 p-6 pb-12 shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6" />
-        
-        <div className="text-center mb-8">
-          <h3 className="text-xl font-bold text-white mb-2">{t('refill_balance')}</h3>
-          <p className="text-white/50 text-xs">{t('standard_rate')}</p>
-        </div>
-
-        <div className="space-y-8">
-          <div className="bg-black/40 rounded-2xl p-6 border border-white/5">
-            <div className="flex justify-between items-end mb-4">
-              <span className="text-sm font-mono text-emerald-green">{t('amount')}</span>
-              <span className="text-2xl font-bold text-white">{amount.toLocaleString()} <span className="text-xs text-white/40">$BANK</span></span>
-            </div>
-            
-            <input 
-              type="range" 
-              min="1000" 
-              max="1000000" 
-              step="1000"
-              value={amount}
-              onChange={(e) => setAmount(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-gold"
-            />
-            
-            <div className="flex justify-between mt-2 font-mono text-[10px] text-white/30 uppercase tracking-widest">
-              <span>1K</span>
-              <span>1M</span>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center px-4">
-            <span className="text-sm text-white/60">{t('total_cost')}</span>
-            <span className="text-2xl font-bold text-emerald-green">${cost.toLocaleString()} <span className="text-xs text-white/40">USD</span></span>
-          </div>
-
-          <button 
-            onClick={onBuy}
-            className="w-full bg-gold py-4 rounded-xl text-black font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-transform"
-          >
-            <Wallet className="w-5 h-5 stroke-[2.5]" />
-            <span>{t('buy_now')}</span>
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-interface SystemTestModalProps {
-  lender: Lender | null;
-  onClose: () => void;
-  t: any;
-}
-
-const SystemTestModal: React.FC<SystemTestModalProps> = ({ lender, onClose, t }) => {
-  if (!lender) return null;
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-    >
-      <motion.div 
-        scale={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-[#111] border border-white/10 p-8 rounded-3xl max-w-sm w-full text-center"
-      >
-        <div className="w-16 h-16 bg-emerald-green/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertCircle className="text-emerald-green w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-bold text-white mb-2">{t('system_test_title')}</h3>
-        <p className="text-white/60 text-sm mb-8 leading-relaxed">
-          Requesting {lender.amount.toLocaleString()} USD from <span className="text-emerald-green font-bold">{lender.name}</span>.
-          <br /><br />
-          {t('system_test_desc')}
-        </p>
-        <button 
-          onClick={onClose}
-          className="w-full bg-white/5 border border-white/10 py-3 rounded-xl text-white font-medium active:scale-[0.98] transition-transform"
-        >
-          {t('close_session')}
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-};
 
 // --- Main App Component ---
 
@@ -326,24 +191,6 @@ const AppContent = () => {
         ? ["Активация управления DAO", "Кроссчейн мосты (SOL/ETH/BASE)", "Шлюз для институционального кредитования", "Глобальные банковские лицензии"]
         : ["DAO Governance Activation", "Cross-chain Bridges (SOL/ETH/BASE)", "Institutional Lending Gateway", "Global Banking Licenses"]
     }
-  ], [lang]);
-
-  const LENDERS: Lender[] = useMemo(() => [
-    { id: '1', name: lang === 'ru' ? 'Альфа Бот' : 'Alpha Bot', amount: 5000, rate: 4.5, term: lang === 'ru' ? '30 Дней' : '30 Days', isAI: true },
-    { id: '2', name: 'Zion LP', amount: 12000, rate: 3.2, term: lang === 'ru' ? '90 Дней' : '90 Days', isAI: false },
-    { id: '3', name: 'CyberNode', amount: 25000, rate: 5.8, term: lang === 'ru' ? '180 Дней' : '180 Days', isAI: true },
-    { id: '4', name: 'GigaWallet', amount: 800, rate: 12.0, term: lang === 'ru' ? '14 Дней' : '14 Days', isAI: false },
-    { id: '5', name: 'Nexus AI', amount: 50000, rate: 2.5, term: lang === 'ru' ? '365 Дней' : '365 Days', isAI: true },
-    { id: '6', name: 'EvoLend', amount: 3500, rate: 6.5, term: lang === 'ru' ? '60 Дней' : '60 Days', isAI: true },
-    { id: '7', name: 'PrimeCap', amount: 15000, rate: 4.0, term: lang === 'ru' ? '90 Дней' : '90 Days', isAI: false },
-    { id: '8', name: lang === 'ru' ? 'Эфир Бот' : 'Aether Bot', amount: 1200, rate: 15.0, term: lang === 'ru' ? '7 Дней' : '7 Days', isAI: true },
-    { id: '9', name: 'MetaVault', amount: 45000, rate: 3.8, term: lang === 'ru' ? '120 Дней' : '120 Days', isAI: false },
-    { id: '10', name: lang === 'ru' ? 'БыстрыйЗайм' : 'SwiftLoan', amount: 2500, rate: 8.2, term: lang === 'ru' ? '30 Дней' : '30 Days', isAI: true },
-    { id: '11', name: 'IronClad', amount: 30000, rate: 2.1, term: lang === 'ru' ? '1 Год' : '1 Year', isAI: false },
-    { id: '12', name: 'BitStream', amount: 500, rate: 14.5, term: lang === 'ru' ? '5 Дней' : '5 Days', isAI: true },
-    { id: '13', name: 'Nova Flow', amount: 18000, rate: 4.9, term: lang === 'ru' ? '90 Дней' : '90 Days', isAI: true },
-    { id: '14', name: 'Orbit LP', amount: 9500, rate: 5.2, term: lang === 'ru' ? '60 Дней' : '60 Days', isAI: false },
-    { id: '15', name: 'QuantumX', amount: 50000, rate: 3.0, term: lang === 'ru' ? '365 Дней' : '365 Days', isAI: true },
   ], [lang]);
 
   useEffect(() => {
@@ -434,20 +281,6 @@ const AppContent = () => {
       return () => clearTimeout(expandTimer);
     }
   }, []);
-
-  const handleBuy = () => {
-    // Mock syncing process
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.showPopup) {
-      tg.showPopup({
-        title: t('syncing'),
-        message: t('connect_wallet_alert'),
-        buttons: [{ type: 'ok', text: 'OK' }]
-      });
-    } else {
-      alert(t('connect_wallet_alert'));
-    }
-  };
 
   return (
     <div 

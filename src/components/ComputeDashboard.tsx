@@ -4,7 +4,7 @@ import { Cpu, Zap, Activity, Battery, RefreshCw, AlertTriangle, ShieldCheck, Glo
 import { useNeural } from '../lib/NeuralContext';
 
 export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
-  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy } = useNeural();
+  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy, blocks } = useNeural();
 
   const energyPercent = (energy / maxEnergy) * 100;
 

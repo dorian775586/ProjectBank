@@ -109,8 +109,8 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
 
         // Energy logic
         if (status === 'TRAINING') {
-          // AGGRESSIVE DRAIN: 10/sec for Force, 5 for Balanced
-          const drainRate = loadFactor === 0.9 ? 12 : (loadFactor === 0.5 ? 6 : 2);
+          // AGGRESSIVE DRAIN: 60/sec for Force, 30 for Balanced
+          const drainRate = loadFactor === 0.9 ? 60 : (loadFactor === 0.5 ? 30 : 10);
           energy = Math.max(0, energy - drainRate * delta);
           
           if (energy <= 0) {
