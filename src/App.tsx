@@ -233,7 +233,7 @@ const AppContent = () => {
               updated_at: new Date().toISOString()
             });
           
-          console.log(`Supabase Status: Data Loaded. Balance: ${profile.coins} $BANK`);
+          console.log(`Supabase Status: Data Loaded. Balance: ${profile.coins} $NXS`);
         } else {
           // User does NOT exist: Create new profile with 0 coins
           const { error: createError } = await supabase
@@ -322,7 +322,7 @@ const AppContent = () => {
           className="flex items-center bg-[#111] rounded-full px-4 py-1.5 border border-white/5 shadow-inner overflow-hidden relative"
         >
           <span className={`text-xs font-bold transition-colors duration-500 ${hasNewBlock ? 'text-emerald-green' : 'text-gold'}`}>
-            {balance.toLocaleString()} $BANK
+            {balance.toLocaleString()} $NXS
           </span>
           {hasNewBlock && (
             <motion.div 
@@ -484,7 +484,7 @@ const AppContent = () => {
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                   <div className="space-y-1">
                     <span className="text-[10px] text-white/40 uppercase font-bold">{t('total_earnings')}</span>
-                    <div className="text-xl font-bold text-white leading-none">{balance.toFixed(balance > 1 ? 2 : 4)} PBN</div>
+                    <div className="text-xl font-bold text-white leading-none">{balance.toFixed(balance > 1 ? 2 : 4)} NXS</div>
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] text-white/40 uppercase font-bold">{t('active_loans')}</span>

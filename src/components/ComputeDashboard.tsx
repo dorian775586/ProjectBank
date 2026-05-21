@@ -4,9 +4,10 @@ import { Cpu, Zap, Activity, Battery, RefreshCw, AlertTriangle, ShieldCheck, Glo
 import { useNeural } from '../lib/NeuralContext';
 
 export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
-  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy, blocks } = useNeural();
+  const { intelligence, energy, maxEnergy, loadFactor, status, difficulty, startTraining, stopTraining, restoreEnergy, blocks, globalMined, totalSupply } = useNeural();
 
   const energyPercent = (energy / maxEnergy) * 100;
+  const globalProgress = (globalMined / totalSupply) * 100;
 
   const modes = [
     { name: 'Low', load: 0.2, color: 'text-blue-400', bg: 'bg-blue-400/10' },
@@ -21,10 +22,10 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
         <h3 className="text-[10px] text-white/40 uppercase tracking-[2px] font-bold">Neural Profile</h3>
         
         <div className="flex justify-between items-end border-b border-white/5 pb-4">
-          <span className="text-sm text-white/60">Intelligence</span>
+          <span className="text-sm text-white/60">Computation Yield</span>
           <div className="text-2xl font-bold tracking-tighter flex items-center space-x-2">
             <span>{intelligence.toFixed(intelligence > 10 ? 2 : 6)}</span>
-            <span className="text-xs text-emerald-green">PBN</span>
+            <span className="text-xs text-emerald-green">NXS</span>
           </div>
         </div>
 
@@ -41,6 +42,36 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
                 energyPercent < 20 ? 'bg-red-500' : 'bg-emerald-green'
               }`}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Global Distribution Status */}
+      <section className="space-y-4">
+        <h3 className="text-[10px] text-white/40 uppercase tracking-[2px] font-bold">Global Grid Progress</h3>
+        <div className="bg-[#111] border border-white/10 p-5 rounded-lg space-y-4 shadow-xl">
+           <div className="flex justify-between items-end text-[10px] uppercase font-bold">
+            <span className="text-white/40">Total Grid Supply</span>
+            <span className="text-emerald-green">1,000,000,000 NXS</span>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-mono">
+              <span className="text-white/30">Mined: {globalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span className="text-gold">{globalProgress.toFixed(4)}%</span>
+            </div>
+            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${globalProgress}%` }}
+                className="h-full bg-gradient-to-r from-emerald-green/40 to-emerald-green shadow-[0_0_10px_rgba(0,255,136,0.2)]"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3 text-[10px] text-white/20 font-mono italic border-t border-white/5 pt-4">
+            <Globe className="w-3 h-3" />
+            <span>Projected Supply Exhaustion: Q3 2027</span>
           </div>
         </div>
       </section>
@@ -157,7 +188,7 @@ export const ComputeDashboard: React.FC<{ t: any }> = ({ t }) => {
           <ShieldCheck className="w-5 h-5 text-gold" />
           <span className="text-xs uppercase font-bold font-mono">Core Maintenance</span>
         </div>
-        <span className="text-[10px] text-white/30 font-mono">-0.500 PBN</span>
+        <span className="text-[10px] text-white/30 font-mono">-0.500 NXS</span>
       </button>
     </div>
   );

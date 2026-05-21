@@ -1,6 +1,6 @@
 {
-  "name": "BANK Crypto Lending",
-  "description": "Premium decentralized crypto-lending platform for Telegram.",
+  "name": "ProjectNexus",
+  "description": "Premium decentralized neural computing and liquidity governance platform.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -18,6 +18,7 @@ interface NeuralState {
   status: 'IDLE' | 'TRAINING' | 'COOLING';
   difficulty: number;
   lastUpdate: number;
+  globalMined: number;
 }
 
 interface NeuralContextType extends NeuralState {
@@ -25,14 +26,31 @@ interface NeuralContextType extends NeuralState {
   stopTraining: () => void;
   restoreEnergy: () => void;
   setIntelligence: (val: number) => void;
+  totalSupply: number;
 }
+
+const TOTAL_SUPPLY = 1000000000; // 1 Billion NXS
 
 const NeuralContext = createContext<NeuralContextType | undefined>(undefined);
 
 export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: string | null }> = ({ children, userId }) => {
   const [state, setState] = useState<NeuralState>(() => {
     const savedEnergy = typeof window !== 'undefined' ? localStorage.getItem('neural_energy') : null;
-    const energy = savedEnergy ? parseFloat(savedEnergy) : 3600;
+    const savedLastUpdate = typeof window !== 'undefined' ? localStorage.getItem('neural_last_update') : null;
+    const savedGlobalMined = typeof window !== 'undefined' ? localStorage.getItem('neural_global_mined') : null;
+
+    let energy = savedEnergy ? parseFloat(savedEnergy) : 3600;
+    const lastUpdate = savedLastUpdate ? parseInt(savedLastUpdate) : Date.now();
+    const globalMined = savedGlobalMined ? parseFloat(savedGlobalMined) : 420500600; // Initial simulated supply
+
+    // Offline Energy Recovery
+    if (lastUpdate < Date.now()) {
+      const deltaSeconds = (Date.now() - lastUpdate) / 1000;
+      const recoveryRate = 0.5; // Slightly faster recovery for offline? Or keep it slow as requested.
+      // User requested energy to recover even offline.
+      energy = Math.min(3600, energy + recoveryRate * deltaSeconds);
+    }
+
     return {
       intelligence: 0,
       workAccumulated: 0,
@@ -43,13 +61,16 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       status: 'IDLE',
       difficulty: 1.0,
       lastUpdate: Date.now(),
+      globalMined: globalMined
     };
   });
 
-  // Persist energy to localStorage
+  // Persist state to localStorage
   useEffect(() => {
     localStorage.setItem('neural_energy', state.energy.toString());
-  }, [state.energy]);
+    localStorage.setItem('neural_last_update', state.lastUpdate.toString());
+    localStorage.setItem('neural_global_mined', state.globalMined.toString());
+  }, [state.energy, state.lastUpdate, state.globalMined]);
 
   // Load initial intelligence from Supabase (mapped to coins for now)
   useEffect(() => {
@@ -114,7 +135,15 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
       setState(prev => {
         const now = Date.now();
         const delta = (now - prev.lastUpdate) / 1000;
-        let { energy, intelligence, status, loadFactor, difficulty, workAccumulated, blocks } = prev;
+        let { energy, intelligence, status, loadFactor, difficulty, workAccumulated, blocks, globalMined } = prev;
+
+        // Simulated Global Supply Growth (everyone mining)
+        const globalGrowthRate = 1.25; // NXS per second roughly
+        globalMined += globalGrowthRate * delta;
+
+        // Difficulty depends on % of total supply mined
+        const minedPercentage = globalMined / TOTAL_SUPPLY;
+        difficulty = 1.0 + (minedPercentage * 5.0); // Ranges from 1.0 to 6.0
 
         // Energy logic
         if (status === 'TRAINING') {
@@ -164,6 +193,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
           difficulty,
           workAccumulated,
           blocks,
+          globalMined,
           lastUpdate: now
         };
       });
@@ -184,7 +214,7 @@ export const NeuralProvider: React.FC<{ children: React.ReactNode; userId: strin
   }, [userId, state.intelligence]);
 
   return (
-    <NeuralContext.Provider value={{ ...state, startTraining, stopTraining, restoreEnergy, setIntelligence }}>
+    <NeuralContext.Provider value={{ ...state, startTraining, stopTraining, restoreEnergy, setIntelligence, totalSupply: TOTAL_SUPPLY }}>
       {children}
     </NeuralContext.Provider>
   );
